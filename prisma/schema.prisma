@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" 
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum BookingType {
+  GUEST
+  MEMBER
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum RoomStatus {
+  AVAILABLE
+  BOOKED
+  MAINTENANCE
+  OUT_OF_SERVICE
+}
+
+model Member {
+  id           Int           @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  email        String        @unique
+  gender       Gender
+  status       MemberStatus  @default(ACTIVE)
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  zipCode      String?
+  country      String?       @default("USA")
+  lastLoginAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  bookings     Booking[]
+
+  @@index([status])
+}
+
+model Room {
+  id            Int          @id @default(autoincrement())
+  name          String
+  type          String
+  description   String
+  pricePerNight Decimal
+  maxGuests     Int
+  amenities     String
+  imageUrl      String?
+  petsAllowed    Boolean @default(false)
+  smokingAllowed Boolean @default(false)
+  status        RoomStatus   @default(AVAILABLE)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  bookings      Booking[]
+
+  @@index([status])
+  @@index([type])
+}
+
+model Booking {
+  id                    Int             @id @default(autoincrement())
+  referenceNumber       String          @unique
+  roomId                Int
+  room                  Room            @relation(fields: [roomId], references: [id])
+  memberId              Int?
+  member                Member?         @relation(fields: [memberId], references: [id])
+  bookingType           BookingType     @default(GUEST)
+  firstName             String
+  lastName              String
+  gender                Gender
+  guestEmail            String
+  guestCount            Int
+  checkInDate           DateTime
+  checkOutDate          DateTime
+  specialRequests       String?
+  addressLine1          String
+  addressLine2          String?
+  city                  String
+  state                 String
+  zipCode               String
+  country               String          @default("USA")
+  pricePerNight         Decimal
+  numberOfNights        Int
+  discountAmount        Decimal @default(0)
+  taxAmount             Decimal @default(0)
+  totalPrice            Decimal
+  paymentStatus         PaymentStatus   @default(PENDING)
+  paymentTransactionId  String?
+  status                BookingStatus   @default(CONFIRMED)
+  confirmationEmailSent Boolean         @default(false)
+  bookingSource         String @default("WEB")
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([guestEmail])
+  @@index([status])
+  @@index([roomId, checkInDate, checkOutDate])
+}
