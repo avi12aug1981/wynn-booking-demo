@@ -38,7 +38,6 @@ enum PaymentStatus {
 
 enum RoomStatus {
   AVAILABLE
-  BOOKED
   MAINTENANCE
   OUT_OF_SERVICE
 }
