@@ -43,4 +43,5 @@ next-env.d.ts
 /app/generated/prisma
 
 dev.db
-prisma/dev.db
+prisma/dev.dbAGENTS.md
+CLAUDE.md
