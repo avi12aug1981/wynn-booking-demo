@@ -226,3 +226,48 @@ export async function getBookingByReferenceNumber(
       data: booking,
     };
   }
+
+  export async function cancelBooking(referenceNumber: string) {
+    const booking = await prisma.booking.findUnique({
+      where: { referenceNumber },
+    });
+  
+    if (!booking) {
+      return {
+        success: false,
+        status: 404,
+        message: Messages.Booking.BookingNotFound,
+      };
+    }
+  
+    if (booking.status === BookingStatus.CANCELLED) {
+      return {
+        success: false,
+        status: 400,
+        message: Messages.Booking.BookingAlreadyCancelled,
+      };
+    }
+  
+    const cancelledBooking = await prisma.booking.update({
+      where: { referenceNumber },
+      data: {
+        status: BookingStatus.CANCELLED,
+        paymentStatus: PaymentStatus.REFUNDED,
+      },
+    });
+  
+    console.info("Booking cancelled successfully", {
+      referenceNumber: cancelledBooking.referenceNumber,
+    });
+  
+    return {
+      success: true,
+      status: 200,
+      data: {
+        referenceNumber: cancelledBooking.referenceNumber,
+        bookingStatus: cancelledBooking.status,
+        paymentStatus: cancelledBooking.paymentStatus,
+        message: Messages.Booking.BookingCancelled,
+      },
+    };
+  }

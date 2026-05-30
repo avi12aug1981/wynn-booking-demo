@@ -10,7 +10,8 @@ export const Messages = {
         "Create booking API failed.",
 
       BookingLookupFailed:
-        "Booking lookup API failed."
+        "Booking lookup API failed.",
+        CancelBookingFailed: "Cancel booking API failed.",
     },
   
     Booking: {
@@ -75,7 +76,13 @@ export const Messages = {
         "Booking created successfully.",
 
       BookingNotFound:
-        "Booking not found." 
+        "Booking not found.",
+
+      BookingAlreadyCancelled:
+        "Booking is already cancelled.",
+
+      BookingCancelled:
+        "Booking cancelled successfully.",
     },
   
     RoomSearch: {
@@ -89,6 +96,6 @@ export const Messages = {
         "Guest count must be at least 1.",
   
       SearchFailed:
-        "Unable to search rooms at this time. Please try again."
+        "Unable to search rooms at this time. Please try again.",
     }
   } as const;
