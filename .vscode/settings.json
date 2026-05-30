@@ -1,6 +1,7 @@
 {
-    "terminal.integrated.commandsToSkipShell": [
-        "",
-        ""
-    ]
+  "terminal.integrated.commandsToSkipShell": ["", ""],
+  "css.lint.unknownAtRules": "ignore",
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
 }
