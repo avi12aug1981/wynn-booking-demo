@@ -168,6 +168,7 @@ async function main() {
       adultCount: 2,
       childCount: 0,
       infantCount: 0,
+      petCount: 0,
       checkInDate: tomorrow,
       checkOutDate: threeDaysLater,
       addressLine1: "123 Paradise Road",

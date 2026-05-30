@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite" 
+  provider = "sqlite"
 }
 
 enum Gender {
@@ -42,65 +42,73 @@ enum RoomStatus {
   OUT_OF_SERVICE
 }
 
+enum AgeGroup {
+  ADULT
+  CHILD
+  INFANT
+}
+
 model Member {
-  id           Int           @id @default(autoincrement())
+  id           Int          @id @default(autoincrement())
   firstName    String
   lastName     String
-  email        String        @unique
+  email        String       @unique
   gender       Gender
-  status       MemberStatus  @default(ACTIVE)
+  status       MemberStatus @default(ACTIVE)
   addressLine1 String?
   addressLine2 String?
   city         String?
   state        String?
   zipCode      String?
-  country      String?       @default("USA")
+  country      String?      @default("USA")
   lastLoginAt  DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
   bookings     Booking[]
 
   @@index([status])
 }
 
 model Room {
-  id            Int          @id @default(autoincrement())
-  name          String
-  type          String
-  description   String
-  pricePerNight Decimal
-  maxGuests     Int
-  amenities     String
-  imageUrl      String?
-  petsAllowed    Boolean @default(false)
-  smokingAllowed Boolean @default(false)
-  rating Decimal @default(4.5)
-  reviewCount Int @default(0)
-  status        RoomStatus   @default(AVAILABLE)
-  isActive      Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  bookings      Booking[]
+  id             Int        @id @default(autoincrement())
+  name           String
+  type           String
+  description    String
+  pricePerNight  Decimal
+  maxGuests      Int
+  amenities      String
+  imageUrl       String?
+  petsAllowed    Boolean    @default(false)
+  smokingAllowed Boolean    @default(false)
+  rating         Decimal    @default(4.5)
+  reviewCount    Int        @default(0)
+  status         RoomStatus @default(AVAILABLE)
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  bookings       Booking[]
 
   @@index([status])
   @@index([type])
 }
 
 model Booking {
-  id                    Int             @id @default(autoincrement())
-  referenceNumber       String          @unique
+  id                    Int            @id @default(autoincrement())
+  referenceNumber       String         @unique
   roomId                Int
-  room                  Room            @relation(fields: [roomId], references: [id])
+  room                  Room           @relation(fields: [roomId], references: [id])
   memberId              Int?
-  member                Member?         @relation(fields: [memberId], references: [id])
-  bookingType           BookingType     @default(GUEST)
+  member                Member?        @relation(fields: [memberId], references: [id])
+  bookingType           BookingType    @default(GUEST)
   firstName             String
   lastName              String
   gender                Gender
   contactEmail          String
   adultCount            Int
-  childCount            Int @default(0)
-  infantCount           Int @default(0)
+  childCount            Int            @default(0)
+  infantCount           Int            @default(0)
+  petCount              Int            @default(0)
+  guests                BookingGuest[]
   checkInDate           DateTime
   checkOutDate          DateTime
   specialRequests       String?
@@ -109,21 +117,38 @@ model Booking {
   city                  String
   state                 String
   zipCode               String
-  country               String          @default("USA")
+  country               String         @default("USA")
   pricePerNight         Decimal
   numberOfNights        Int
-  discountAmount        Decimal @default(0)
-  taxAmount             Decimal @default(0)
+  discountAmount        Decimal        @default(0)
+  taxAmount             Decimal        @default(0)
   totalPrice            Decimal
-  paymentStatus         PaymentStatus   @default(PENDING)
+  paymentStatus         PaymentStatus  @default(PENDING)
   paymentTransactionId  String?
-  status                BookingStatus   @default(CONFIRMED)
-  confirmationEmailSent Boolean         @default(false)
-  bookingSource         String @default("WEB")
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  status                BookingStatus  @default(CONFIRMED)
+  confirmationEmailSent Boolean        @default(false)
+  bookingSource         String         @default("WEB")
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
 
   @@index([contactEmail])
+  @@index([memberId])
   @@index([status])
   @@index([roomId, checkInDate, checkOutDate])
+}
+
+model BookingGuest {
+  id        Int      @id @default(autoincrement())
+  bookingId Int
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  sequence  Int
+  firstName String
+  lastName  String
+  gender    Gender?
+  ageGroup  AgeGroup
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([bookingId, sequence])
+  @@index([bookingId])
 }
