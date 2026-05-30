@@ -1,11 +1,15 @@
 import SearchForm from "./components/SearchForm";
 import RoomCard from "./components/RoomCard";
+import type { RoomSearchResult } from "@/app/types/room";
 
 type HomeProps = {
   searchParams: Promise<{
     checkInDate?: string;
     checkOutDate?: string;
     guestCount?: string;
+    petsAllowed?: string;
+    nonSmoking?: string;
+    minRating?: string;
   }>;
 };
 
@@ -13,7 +17,7 @@ async function getRooms(
   checkInDate?: string,
   checkOutDate?: string,
   guestCount?: string
-) {
+): Promise<RoomSearchResult[]> {
   if (!checkInDate || !checkOutDate || !guestCount) {
     return [];
   }
@@ -29,7 +33,7 @@ async function getRooms(
     return [];
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as { rooms?: RoomSearchResult[] };
 
   return data.rooms ?? [];
 }
@@ -44,7 +48,9 @@ export default async function Home({ searchParams }: HomeProps) {
   );
 
   const hasSearched =
-    params.checkInDate && params.checkOutDate && params.guestCount;
+  params.checkInDate &&
+  params.checkOutDate &&
+  params.guestCount;
 
   return (
     <main className="min-h-screen bg-[#f7f4ef]">
@@ -65,7 +71,14 @@ export default async function Home({ searchParams }: HomeProps) {
       </section>
 
       <section className="max-w-6xl mx-auto px-6 -mt-8 relative z-10">
-        <SearchForm />
+      <SearchForm
+  defaultCheckInDate={params.checkInDate}
+  defaultCheckOutDate={params.checkOutDate}
+  defaultGuestCount={params.guestCount}
+  defaultPetsAllowed={params.petsAllowed === "true"}
+  defaultNonSmoking={params.nonSmoking === "true"}
+  defaultMinRating={params.minRating}
+/>
       </section>
 
       <section className="max-w-6xl mx-auto px-6 py-10">

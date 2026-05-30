@@ -11,7 +11,9 @@ export const Messages = {
 
       BookingLookupFailed:
         "Booking lookup API failed.",
-        CancelBookingFailed: "Cancel booking API failed.",
+      CancelBookingFailed: "Cancel booking API failed.",
+
+      RoomSearchFailed: "Room search API failed.",
     },
   
     Booking: {
@@ -94,6 +96,9 @@ export const Messages = {
   
       InvalidGuestCount:
         "Guest count must be at least 1.",
+
+      InvalidRating:
+        "Minimum rating must be between 0 and 5.",
   
       SearchFailed:
         "Unable to search rooms at this time. Please try again.",

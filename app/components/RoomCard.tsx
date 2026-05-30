@@ -1,5 +1,5 @@
 import { Star, Users, PawPrint, Ban, CheckCircle } from "lucide-react";
-import { amenityIcons } from "@/app/lib/amenity-icons";
+import { getAmenityIcon } from "@/app/lib/amenity-icons";
 
 type RoomCardProps = {
   room: {
@@ -53,7 +53,7 @@ export default function RoomCard({ room }: RoomCardProps) {
 
         <div className="flex flex-wrap gap-2 mt-4">
           {room.amenities.map((amenity) => {
-            const Icon = amenityIcons[amenity];
+            const Icon = getAmenityIcon(amenity);
 
             return (
               <span
@@ -91,7 +91,12 @@ export default function RoomCard({ room }: RoomCardProps) {
           </div>
 
           <button className="bg-[#007a68] hover:bg-[#006250] text-white px-6 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold">
-            Book Now
+          <a
+  href={`/booking?roomId=${room.id}`}
+  className="bg-[#007a68] hover:bg-[#006250] text-white px-6 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold"
+>
+  Book Now
+</a>
           </button>
         </div>
       </div>
