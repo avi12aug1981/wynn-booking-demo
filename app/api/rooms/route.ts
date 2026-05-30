@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { BookingStatus, RoomStatus } from "@prisma/client";
+import { BookingStatus, RoomStatus } from "@/app/types/prisma-enums";
 import { prisma } from "@/app/lib/prisma";
 import { calculateNumberOfNights } from "@/app/lib/availability";
 

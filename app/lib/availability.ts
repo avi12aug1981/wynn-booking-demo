@@ -1,4 +1,4 @@
-import { BookingStatus } from "@prisma/client";
+import { BookingStatus } from "@/app/types/prisma-enums";
 import { prisma } from "./prisma";
 
 export function calculateNumberOfNights(checkInDate: Date, checkOutDate: Date): number {

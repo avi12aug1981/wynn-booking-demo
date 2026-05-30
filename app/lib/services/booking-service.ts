@@ -1,13 +1,12 @@
-import { BookingStatus, PaymentStatus, RoomStatus } from "@prisma/client";
-import { ApplicationConstants } from "@/app/constants/application-constants";
-import { Messages } from "@/app/constants/messages";
+import { BookingStatus, PaymentStatus, RoomStatus } from "@/app/types/prisma-enums";
+import { ApplicationConstants, Messages } from "@/app/constants";
+import { CreateBookingRequest } from "@/app/types/booking";
 import { calculateNumberOfNights, isRoomAvailable } from "@/app/lib/availability";
 import { prisma } from "@/app/lib/prisma";
 import {
   generateBookingReference,
   generatePaymentTransactionId,
 } from "@/app/lib/utils/reference-number";
-import { CreateBookingRequest } from "@/app/types/booking";
 
 function validateBasicBookingRequest(request: CreateBookingRequest): string | null {
   if (!request.roomId) return Messages.Booking.RoomRequired;
@@ -194,3 +193,36 @@ export async function createBooking(request: CreateBookingRequest) {
     },
   };
 }
+
+export async function getBookingByReferenceNumber(
+    referenceNumber: string
+  ) {
+    const booking = await prisma.booking.findUnique({
+      where: {
+        referenceNumber,
+      },
+      include: {
+        room: true,
+        member: true,
+        guests: {
+          orderBy: {
+            sequence: "asc",
+          },
+        },
+      },
+    });
+  
+    if (!booking) {
+      return {
+        success: false,
+        status: 404,
+        message: Messages.Booking.BookingNotFound,
+      };
+    }
+  
+    return {
+      success: true,
+      status: 200,
+      data: booking,
+    };
+  }

@@ -1,13 +1,12 @@
-import { PrismaClient, Gender, MemberStatus, RoomStatus, BookingStatus, BookingType, PaymentStatus } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-
-const adapter = new PrismaBetterSqlite3({
-    url: "file:./dev.db",
-  });
-
-const prisma = new PrismaClient({
-  adapter,
-});
+import { prisma } from "../app/lib/prisma";
+import {
+  BookingStatus,
+  BookingType,
+  Gender,
+  MemberStatus,
+  PaymentStatus,
+  RoomStatus,
+} from "../app/types/prisma-enums";
 
 async function main() {
   await prisma.booking.deleteMany();
