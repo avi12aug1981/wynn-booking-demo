@@ -74,6 +74,8 @@ model Room {
   imageUrl      String?
   petsAllowed    Boolean @default(false)
   smokingAllowed Boolean @default(false)
+  rating Decimal @default(4.5)
+  reviewCount Int @default(0)
   status        RoomStatus   @default(AVAILABLE)
   isActive      Boolean      @default(true)
   createdAt     DateTime     @default(now())
@@ -95,8 +97,10 @@ model Booking {
   firstName             String
   lastName              String
   gender                Gender
-  guestEmail            String
-  guestCount            Int
+  contactEmail          String
+  adultCount            Int
+  childCount            Int @default(0)
+  infantCount           Int @default(0)
   checkInDate           DateTime
   checkOutDate          DateTime
   specialRequests       String?
@@ -119,7 +123,7 @@ model Booking {
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
-  @@index([guestEmail])
+  @@index([contactEmail])
   @@index([status])
   @@index([roomId, checkInDate, checkOutDate])
 }
