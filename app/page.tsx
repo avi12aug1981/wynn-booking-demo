@@ -16,7 +16,10 @@ type HomeProps = {
 async function getRooms(
   checkInDate?: string,
   checkOutDate?: string,
-  guestCount?: string
+  guestCount?: string,
+  petsAllowed?: string,
+  nonSmoking?: string,
+  minRating?: string
 ): Promise<RoomSearchResult[]> {
   if (!checkInDate || !checkOutDate || !guestCount) {
     return [];
@@ -24,10 +27,19 @@ async function getRooms(
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
-  const response = await fetch(
-    `${baseUrl}/api/rooms?checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&guestCount=${guestCount}`,
-    { cache: "no-store" }
-  );
+  const query = new URLSearchParams({
+    checkInDate,
+    checkOutDate,
+    guestCount,
+  });
+
+  if (petsAllowed) query.set("petsAllowed", petsAllowed);
+  if (nonSmoking) query.set("nonSmoking", nonSmoking);
+  if (minRating) query.set("minRating", minRating);
+
+  const response = await fetch(`${baseUrl}/api/rooms?${query.toString()}`, {
+    cache: "no-store",
+  });
 
   if (!response.ok) {
     return [];
@@ -44,13 +56,14 @@ export default async function Home({ searchParams }: HomeProps) {
   const rooms = await getRooms(
     params.checkInDate,
     params.checkOutDate,
-    params.guestCount
+    params.guestCount,
+    params.petsAllowed,
+    params.nonSmoking,
+    params.minRating
   );
 
   const hasSearched =
-  params.checkInDate &&
-  params.checkOutDate &&
-  params.guestCount;
+    params.checkInDate && params.checkOutDate && params.guestCount;
 
   return (
     <main className="min-h-screen bg-[#f7f4ef]">
@@ -65,20 +78,21 @@ export default async function Home({ searchParams }: HomeProps) {
           </h1>
 
           <p className="text-stone-200 mt-3 max-w-2xl">
-            Search available rooms, review premium amenities, and complete your reservation.
+            Search available rooms, review premium amenities, and complete your
+            reservation.
           </p>
         </div>
       </section>
 
       <section className="max-w-6xl mx-auto px-6 -mt-8 relative z-10">
-      <SearchForm
-  defaultCheckInDate={params.checkInDate}
-  defaultCheckOutDate={params.checkOutDate}
-  defaultGuestCount={params.guestCount}
-  defaultPetsAllowed={params.petsAllowed === "true"}
-  defaultNonSmoking={params.nonSmoking === "true"}
-  defaultMinRating={params.minRating}
-/>
+        <SearchForm
+          defaultCheckInDate={params.checkInDate}
+          defaultCheckOutDate={params.checkOutDate}
+          defaultGuestCount={params.guestCount}
+          defaultPetsAllowed={params.petsAllowed === "true"}
+          defaultNonSmoking={params.nonSmoking === "true"}
+          defaultMinRating={params.minRating}
+        />
       </section>
 
       <section className="max-w-6xl mx-auto px-6 py-10">
@@ -87,8 +101,10 @@ export default async function Home({ searchParams }: HomeProps) {
             <h2 className="font-serif text-3xl text-gray-900">
               Available Rooms
             </h2>
+
             <p className="text-gray-600 mt-1">
-              {rooms.length} room option{rooms.length === 1 ? "" : "s"} found for your stay.
+              {rooms.length} room option{rooms.length === 1 ? "" : "s"} found
+              for your stay.
             </p>
           </div>
         )}
@@ -102,8 +118,9 @@ export default async function Home({ searchParams }: HomeProps) {
         {hasSearched && rooms.length === 0 && (
           <div className="bg-white border rounded-sm p-8 text-center">
             <h3 className="font-serif text-2xl">No rooms available</h3>
+
             <p className="text-gray-600 mt-2">
-              Please adjust your dates or guest count and try again.
+              Please adjust your dates, guest count, or filters and try again.
             </p>
           </div>
         )}
