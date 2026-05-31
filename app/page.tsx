@@ -81,12 +81,12 @@ export default async function Home({ searchParams }: HomeProps) {
     <main className="min-h-screen bg-[#f7f4ef]">
       <SearchPageRefreshScript hasSearch={Boolean(hasSearched)} />
       <section className="bg-[#3a2418] text-white">
-        <div className="max-w-6xl mx-auto px-6 py-12">
+        <div className="max-w-6xl mx-auto px-6 py-6">
           <p className="uppercase tracking-[0.35em] text-[#c9b38c] text-sm">
             Wynn Las Vegas
           </p>
 
-          <h1 className="font-serif text-5xl mt-4">
+          <h1 className="font-serif text-3xl mt-4">
             Experience Luxury Accommodations
           </h1>
 

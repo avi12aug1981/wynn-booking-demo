@@ -41,7 +41,7 @@ export default function RoomCard({
         alt={room.name}
         width={800}
         height={400}
-        className="w-full h-56 object-cover"
+        className="w-full h-40 object-cover"
       />
 
       <div className="p-6">
@@ -49,7 +49,7 @@ export default function RoomCard({
           {room.type}
         </p>
 
-        <h3 className="font-serif text-3xl mt-2 text-gray-900">{room.name}</h3>
+        <h3 className="font-serif text-2xl mt-2 text-gray-900">{room.name}</h3>
 
         <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
           <Star size={16} className="fill-[#8c6b43] text-[#8c6b43]" />

@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p ${PORT:-3000}",
     "lint": "eslint",
-    "seed": "prisma db seed"
+    "seed": "prisma db seed",
+    "demo:admin": "tsx scripts/demo-admin.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
