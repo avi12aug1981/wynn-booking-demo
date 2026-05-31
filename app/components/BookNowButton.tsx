@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Hand } from "lucide-react";
 import { Messages } from "@/app/constants/messages";
+import AppButton from "./AppButton";
 
 type BookNowButtonProps = {
   roomId: number;
@@ -80,30 +81,29 @@ function ReadyBookNowButton({
         <div className="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {errorMessage}
         </div>
-        <button
+        <AppButton
           type="button"
+          variant="link"
           onClick={handleBookNow}
-          disabled={isChecking}
-          className="text-xs font-medium uppercase tracking-wide text-[#007a68] underline-offset-2 hover:underline disabled:opacity-60"
+          loading={isChecking}
+          loadingText="Retrying"
         >
           Try again
-        </button>
+        </AppButton>
       </div>
     );
   }
 
   return (
-    <button
+    <AppButton
       type="button"
       onClick={handleBookNow}
-      disabled={isChecking}
-      className="group inline-flex min-w-[140px] cursor-pointer items-center justify-center gap-2 bg-[#007a68] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-white transition-all hover:bg-[#006250] rounded-sm disabled:cursor-wait disabled:opacity-70"
+      loading={isChecking}
+      loadingText="Checking"
+      icon={<Hand size={16} />}
     >
-      {isChecking ? "Checking..." : "Book Now"}
-      {!isChecking && (
-        <Hand size={16} className="transition-transform group-hover:scale-125" />
-      )}
-    </button>
+      Book Now
+    </AppButton>
   );
 }
 

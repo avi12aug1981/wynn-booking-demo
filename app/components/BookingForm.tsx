@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { markSearchResultsStale } from "@/app/constants/search-storage";
-import {
-  CreditCard,
-} from "lucide-react";
+import { CreditCard } from "lucide-react";
+import AppButton from "./AppButton";
 
   type BookingFormProps = {
     bookingSessionToken?: string;
@@ -351,13 +350,14 @@ export default function BookingForm({
         </label>
       </section>
 
-      <button
+      <AppButton
         type="submit"
-        disabled={isSubmitting}
-        className="w-full bg-[#007a68] hover:bg-[#006250] text-white py-3 rounded-sm uppercase tracking-widest font-semibold disabled:opacity-60"
+        fullWidth
+        loading={isSubmitting}
+        loadingText="Processing"
       >
-        {isSubmitting ? "Processing..." : "Confirm Reservation"}
-      </button>
+        Confirm Reservation
+      </AppButton>
     </form>
   );
 }

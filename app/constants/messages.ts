@@ -1,117 +1,96 @@
 export const Messages = {
-    Common: {
-        UnexpectedError:
-        "An unexpected error occurred. Please try again later.",
-  
-      InvalidRequest:
-        "Invalid request.",
-  
-      CreateBookingFailed:
-        "Create booking API failed.",
+  Common: {
+    UnexpectedError: "An unexpected error occurred. Please try again later.",
+    InvalidRequest: "Invalid request.",
 
-      BookingLookupFailed:
-        "Booking lookup API failed.",
-      CancelBookingFailed: "Cancel booking API failed.",
+    CreateBookingFailed: "Create booking API failed.",
+    BookingLookupFailed: "Booking lookup API failed.",
+    CancelBookingFailed: "Cancel booking API failed.",
+    RoomSearchFailed: "Room search API failed.",
+    CreateBookingSessionFailed: "Create booking session API failed.",
+    GetBookingSessionFailed: "Get booking session API failed.",
+  },
 
-      RoomSearchFailed: "Room search API failed.",
-    },
-  
-    Booking: {
-      RoomRequired:
-        "Room is required.",
-  
-      FirstNameRequired:
-        "First name is required.",
-  
-      LastNameRequired:
-        "Last name is required.",
-  
-      ContactEmailRequired:
-        "Contact email is required.",
+  Booking: {
+    RoomRequired: "Room is required.",
+    FirstNameRequired: "First name is required.",
+    LastNameRequired: "Last name is required.",
+    ContactEmailRequired: "Contact email is required.",
+    InvalidEmail: "Please provide a valid email address.",
 
-      InvalidEmail:
-        "Please provide a valid email address.",
-  
-      AddressRequired:
-        "Address line 1 is required.",
-  
-      CityRequired:
-        "City is required.",
-  
-      StateRequired:
-        "State is required.",
-  
-      ZipCodeRequired:
-        "ZIP code is required.",
-  
-      DatesRequired:
-        "Check-in and check-out dates are required.",
-  
-      InvalidDates:
-        "Please provide valid booking dates.",
-  
-      CheckoutMustBeAfterCheckin:
-        "Check-out date must be after check-in date.",
-  
-      AdultRequired:
-        "At least one adult guest is required.",
+    AddressRequired: "Address line 1 is required.",
+    CityRequired: "City is required.",
+    StateRequired: "State is required.",
+    ZipCodeRequired: "ZIP code is required.",
 
-      InvalidGuestCount:
-        "Guest counts cannot be negative.",
-  
-      InvalidGuestName:
-        "Name contains invalid characters.",
-  
-      RoomNotAvailable:
-        "Selected room is not available.",
-  
-      RoomCapacityExceeded:
-        "Guest count exceeds room capacity.",
-  
-      PetsNotAllowed:
-        "Pets are not allowed in the selected room.",
-  
-      RoomNoLongerAvailable:
-        "This room is no longer available for the selected dates.",
+    DatesRequired: "Check-in and check-out dates are required.",
+    InvalidDates: "Please provide valid booking dates.",
+    CheckoutMustBeAfterCheckin: "Check-out date must be after check-in date.",
+    CheckInDateCannotBePast: "Check-in date cannot be in the past.",
 
-      RoomBookingInProgress:
-        "This room is currently being booked by another guest. Please choose another room or try again shortly.",
-  
-      BookingCreated:
-        "Booking created successfully.",
+    AdultRequired: "At least one adult guest is required.",
+    InvalidGuestCount: "Guest counts cannot be negative.",
+    RoomCapacityExceeded:
+      "The selected room cannot accommodate the requested number of guests.",
 
-      BookingNotFound:
-        "Booking not found.",
+    InvalidGuestName: "Name contains invalid characters.",
 
-      BookingAlreadyCancelled:
-        "Booking is already cancelled.",
+    RoomNotAvailable: "Selected room is not available.",
+    RoomNoLongerAvailable:
+      "This room is no longer available for the selected dates.",
+    RoomBookingInProgress:
+      "This room is currently being booked by another guest. Please choose another room or try again shortly.",
 
-      BookingCancelled:
-        "Booking cancelled successfully.",
+    PetsNotAllowed: "Pets are not allowed in the selected room.",
+    InvalidPetCount: "Pet count must be zero or greater.",
+    MaxPetsExceeded: "A maximum of 2 pets are allowed per reservation.",
 
-      InvalidBookingSession:
-        "Your booking session is invalid or has expired. Please search again.",
-    },
-  
-    RoomSearch: {
-      MissingSearchParameters:
-        "Check-in date, check-out date, and guest count are required.",
-  
-      InvalidDates:
-        "Please provide valid check-in and check-out dates.",
-  
-      InvalidGuestCount:
-        "Guest count must be at least 1.",
+    BookingCreated: "Booking created successfully.",
+    BookingNotFound: "Booking not found.",
+    BookingAlreadyCancelled: "Booking is already cancelled.",
+    BookingCancelled: "Booking cancelled successfully.",
 
-      InvalidRating:
-        "Minimum rating must be between 0 and 5.",
-  
-      SearchFailed:
-        "Unable to search rooms at this time. Please try again.",
-        PetsNotAllowed: "Pets are not allowed for the selected room.",
-MaxPetsExceeded: "A maximum of 2 pets are allowed per reservation.",
-InvalidPetCount: "Pet count must be zero or greater.",
-MaxGuestCapacityExceeded:
-  "The selected room cannot accommodate the requested number of guests.",
-    }
-  } as const;
+    InvalidBookingSession:
+      "Your booking session is invalid or has expired. Please search again.",
+    BookingSessionConsumed:
+      "This booking session has already been used. Please search again.",
+  },
+
+  BookingSession: {
+    InvalidRoomSelection: "Invalid room selection.",
+    InvalidGuestCount: "Guest count must be at least 1.",
+    InvalidDates: "Invalid booking dates.",
+    RoomUnavailable: "Selected room is not available.",
+    RoomCapacityExceeded: "Guest count exceeds room capacity.",
+    RoomNoLongerAvailable:
+      "This room is no longer available for the selected dates.",
+    CreateFailed: "Unable to start booking at this time.",
+    NotFound: "Booking session not found.",
+    Inactive: "Booking session is no longer active.",
+    Expired: "Booking session has expired.",
+  },
+
+  RoomSearch: {
+    MissingSearchParameters:
+      "Check-in date, check-out date, and guest count are required.",
+    InvalidDates: "Please provide valid check-in and check-out dates.",
+    InvalidGuestCount: "Guest count must be at least 1.",
+    InvalidRating: "Minimum rating must be between 0 and 5.",
+    SearchFailed: "Unable to search rooms at this time. Please try again.",
+  },
+
+  Payment: {
+    TermsRequired: "Please accept the booking terms and conditions.",
+    BookingFailed: "Unable to complete booking.",
+    SimulationNotice:
+      "Payment is simulated for this demo. Card details are validated but not stored.",
+  },
+
+  Logs: {
+    RoomSearchCompleted: "Room search completed.",
+    BookingCreated: "Booking created successfully.",
+    BookingCancelled: "Booking cancelled successfully.",
+    CreateBookingSessionFailed: "Create booking session failed.",
+    GetBookingSessionFailed: "Get booking session failed.",
+  },
+} as const;

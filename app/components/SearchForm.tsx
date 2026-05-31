@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { todayDateInputValue } from "@/app/lib/utils/date";
+import AppButton from "./AppButton";
 
 type SearchFormProps = {
   defaultCheckInDate?: string;
@@ -27,9 +28,11 @@ export default function SearchForm({
   const [petsAllowed, setPetsAllowed] = useState(defaultPetsAllowed);
   const [nonSmoking, setNonSmoking] = useState(defaultNonSmoking);
   const [minRating, setMinRating] = useState(defaultMinRating);
+  const [isSearching, setIsSearching] = useState(false);
 
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
+    setIsSearching(true);
 
     const query = new URLSearchParams({
       checkInDate,
@@ -123,12 +126,14 @@ export default function SearchForm({
         </div>
       </div>
 
-      <button
+      <AppButton
         type="submit"
-        className="w-full bg-black text-white py-3 rounded-lg hover:opacity-90"
+        fullWidth
+        loading={isSearching}
+        loadingText="Searching"
       >
         Search Rooms
-      </button>
+      </AppButton>
     </form>
   );
 }

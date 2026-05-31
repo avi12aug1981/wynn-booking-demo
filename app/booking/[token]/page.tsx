@@ -67,7 +67,7 @@ export default async function BookingPage({
 
   const nightlyRate = Number(room.pricePerNight);
   const roomSubtotal = nightlyRate * numberOfNights;
-  const taxAmount = Number((roomSubtotal * 0.13).toFixed(2));
+  const taxAmount = Number((roomSubtotal * ApplicationConstants.TaxRate).toFixed(2));
   const resortFee = 0;
   const discountAmount = 0;
 

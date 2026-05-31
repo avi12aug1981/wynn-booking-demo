@@ -120,7 +120,7 @@ export async function createBooking(request: CreateBookingRequest) {
     return {
       success: false,
       status: 400,
-      message: Messages.RoomSearch.MaxPetsExceeded,
+      message: Messages.Booking.MaxPetsExceeded,
     };
   }
 
