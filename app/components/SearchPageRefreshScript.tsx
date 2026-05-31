@@ -1,80 +1,82 @@
+"use client";
+
+import { useEffect } from "react";
+import { SEARCH_NEEDS_REFRESH_KEY } from "@/app/constants/search-storage";
+
 type SearchPageRefreshScriptProps = {
   hasSearch: boolean;
 };
 
+function isSearchResultsPage() {
+  return (
+    window.location.pathname === "/" &&
+    window.location.search.includes("checkInDate=")
+  );
+}
+
+function clearStaleFlag() {
+  try {
+    sessionStorage.removeItem(SEARCH_NEEDS_REFRESH_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function hasStaleFlag() {
+  try {
+    return sessionStorage.getItem(SEARCH_NEEDS_REFRESH_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function reloadSearchResults() {
+  clearStaleFlag();
+  window.location.reload();
+}
+
+function shouldReloadNow() {
+  if (!isSearchResultsPage()) {
+    return false;
+  }
+
+  if (hasStaleFlag()) {
+    return true;
+  }
+
+  const navigationEntry = performance.getEntriesByType(
+    "navigation"
+  )[0] as PerformanceNavigationTiming | undefined;
+
+  return navigationEntry?.type === "back_forward";
+}
+
 export default function SearchPageRefreshScript({
   hasSearch,
 }: SearchPageRefreshScriptProps) {
-  if (!hasSearch) {
-    return null;
-  }
-
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `
-(function () {
-  var STALE_KEY = "wynn-search-needs-refresh";
-
-  function isSearchResultsPage() {
-    return (
-      window.location.pathname === "/" &&
-      window.location.search.indexOf("checkInDate=") !== -1
-    );
-  }
-
-  function clearStaleFlag() {
-    try {
-      sessionStorage.removeItem(STALE_KEY);
-    } catch (error) {
-      /* ignore */
-    }
-  }
-
-  function hasStaleFlag() {
-    try {
-      return sessionStorage.getItem(STALE_KEY) === "1";
-    } catch (error) {
-      return false;
-    }
-  }
-
-  function reloadSearchResults() {
-    clearStaleFlag();
-    window.location.reload();
-  }
-
-  function shouldReloadNow() {
-    if (!isSearchResultsPage()) {
-      return false;
-    }
-
-    if (hasStaleFlag()) {
-      return true;
-    }
-
-    var navigationEntry = performance.getEntriesByType("navigation")[0];
-
-    return Boolean(navigationEntry && navigationEntry.type === "back_forward");
-  }
-
-  if (shouldReloadNow()) {
-    reloadSearchResults();
-    return;
-  }
-
-  window.addEventListener("pageshow", function (event) {
-    if (!isSearchResultsPage()) {
+  useEffect(() => {
+    if (!hasSearch) {
       return;
     }
 
-    if (event.persisted || hasStaleFlag()) {
+    if (shouldReloadNow()) {
       reloadSearchResults();
+      return;
     }
-  });
-})();
-`,
-      }}
-    />
-  );
+
+    function handlePageShow(event: PageTransitionEvent) {
+      if (!isSearchResultsPage()) {
+        return;
+      }
+
+      if (event.persisted || hasStaleFlag()) {
+        reloadSearchResults();
+      }
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [hasSearch]);
+
+  return null;
 }
