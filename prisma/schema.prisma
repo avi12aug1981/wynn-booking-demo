@@ -48,6 +48,12 @@ enum AgeGroup {
   INFANT
 }
 
+enum BookingSessionStatus {
+  ACTIVE
+  CONSUMED
+  EXPIRED
+}
+
 model Member {
   id           Int          @id @default(autoincrement())
   firstName    String
@@ -70,44 +76,47 @@ model Member {
 }
 
 model Room {
-  id             Int        @id @default(autoincrement())
-  name           String
-  type           String
-  description    String
-  pricePerNight  Decimal
-  maxGuests      Int
-  amenities      String
-  imageUrl       String?
-  petsAllowed    Boolean    @default(false)
-  smokingAllowed Boolean    @default(false)
-  rating         Decimal    @default(4.5)
-  reviewCount    Int        @default(0)
-  status         RoomStatus @default(AVAILABLE)
-  isActive       Boolean    @default(true)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  bookings       Booking[]
+  id              Int              @id @default(autoincrement())
+  name            String
+  type            String
+  description     String
+  pricePerNight   Decimal
+  maxGuests       Int
+  amenities       String
+  imageUrl        String?
+  petsAllowed     Boolean          @default(false)
+  smokingAllowed  Boolean          @default(false)
+  rating          Decimal          @default(4.5)
+  reviewCount     Int              @default(0)
+  status          RoomStatus       @default(AVAILABLE)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  bookings        Booking[]
+  bookingSessions BookingSession[]
 
   @@index([status])
   @@index([type])
 }
 
 model Booking {
-  id                    Int            @id @default(autoincrement())
-  referenceNumber       String         @unique
+  id                    Int             @id @default(autoincrement())
+  referenceNumber       String          @unique
   roomId                Int
-  room                  Room           @relation(fields: [roomId], references: [id])
+  room                  Room            @relation(fields: [roomId], references: [id])
   memberId              Int?
-  member                Member?        @relation(fields: [memberId], references: [id])
-  bookingType           BookingType    @default(GUEST)
+  member                Member?         @relation(fields: [memberId], references: [id])
+  bookingSessionId      Int?
+  bookingSession        BookingSession? @relation(fields: [bookingSessionId], references: [id])
+  bookingType           BookingType     @default(GUEST)
   firstName             String
   lastName              String
   gender                Gender
   contactEmail          String
   adultCount            Int
-  childCount            Int            @default(0)
-  infantCount           Int            @default(0)
-  petCount              Int            @default(0)
+  childCount            Int             @default(0)
+  infantCount           Int             @default(0)
+  petCount              Int             @default(0)
   guests                BookingGuest[]
   checkInDate           DateTime
   checkOutDate          DateTime
@@ -117,22 +126,23 @@ model Booking {
   city                  String
   state                 String
   zipCode               String
-  country               String         @default("USA")
+  country               String          @default("USA")
   pricePerNight         Decimal
   numberOfNights        Int
-  discountAmount        Decimal        @default(0)
-  taxAmount             Decimal        @default(0)
+  discountAmount        Decimal         @default(0)
+  taxAmount             Decimal         @default(0)
   totalPrice            Decimal
-  paymentStatus         PaymentStatus  @default(PENDING)
+  paymentStatus         PaymentStatus   @default(PENDING)
   paymentTransactionId  String?
-  status                BookingStatus  @default(CONFIRMED)
-  confirmationEmailSent Boolean        @default(false)
-  bookingSource         String         @default("WEB")
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
+  status                BookingStatus   @default(CONFIRMED)
+  confirmationEmailSent Boolean         @default(false)
+  bookingSource         String          @default("WEB")
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
   @@index([contactEmail])
   @@index([memberId])
+  @@index([bookingSessionId])
   @@index([status])
   @@index([roomId, checkInDate, checkOutDate])
 }
@@ -151,4 +161,23 @@ model BookingGuest {
 
   @@unique([bookingId, sequence])
   @@index([bookingId])
+}
+
+model BookingSession {
+  id           Int                  @id @default(autoincrement())
+  token        String               @unique
+  roomId       Int
+  room         Room                 @relation(fields: [roomId], references: [id])
+  checkInDate  DateTime
+  checkOutDate DateTime
+  guestCount   Int
+  status       BookingSessionStatus @default(ACTIVE)
+  expiresAt    DateTime
+  bookings     Booking[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([token])
+  @@index([roomId])
+  @@index([expiresAt])
 }

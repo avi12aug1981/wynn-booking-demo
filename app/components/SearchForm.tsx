@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { todayDateInputValue } from "@/app/lib/utils/date";
 
 type SearchFormProps = {
   defaultCheckInDate?: string;
@@ -19,6 +20,7 @@ export default function SearchForm({
   defaultNonSmoking = false,
   defaultMinRating = "",
 }: SearchFormProps) {
+  const today = todayDateInputValue();
   const [checkInDate, setCheckInDate] = useState(defaultCheckInDate);
   const [checkOutDate, setCheckOutDate] = useState(defaultCheckOutDate);
   const [guestCount, setGuestCount] = useState(Number(defaultGuestCount));
@@ -55,6 +57,7 @@ export default function SearchForm({
           <input
             type="date"
             value={checkInDate}
+            min={today}
             onChange={(e) => setCheckInDate(e.target.value)}
             className="w-full border rounded-lg p-2"
             required
@@ -66,6 +69,7 @@ export default function SearchForm({
           <input
             type="date"
             value={checkOutDate}
+            min={checkInDate || today}
             onChange={(e) => setCheckOutDate(e.target.value)}
             className="w-full border rounded-lg p-2"
             required

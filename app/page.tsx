@@ -1,6 +1,10 @@
 import SearchForm from "./components/SearchForm";
-import RoomCard from "./components/RoomCard";
+import RoomSearchResults from "./components/RoomSearchResults";
+import SearchPageRefreshScript from "./components/SearchPageRefreshScript";
+import { searchAvailableRooms } from "@/app/lib/services/room-search-service";
 import type { RoomSearchResult } from "@/app/types/room";
+
+export const dynamic = "force-dynamic";
 
 type HomeProps = {
   searchParams: Promise<{
@@ -10,6 +14,8 @@ type HomeProps = {
     petsAllowed?: string;
     nonSmoking?: string;
     minRating?: string;
+    bookingError?: string;
+    unavailableRoomId?: string;
   }>;
 };
 
@@ -25,29 +31,20 @@ async function getRooms(
     return [];
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  const parsedGuestCount = Number(guestCount);
 
-  const query = new URLSearchParams({
-    checkInDate,
-    checkOutDate,
-    guestCount,
-  });
-
-  if (petsAllowed) query.set("petsAllowed", petsAllowed);
-  if (nonSmoking) query.set("nonSmoking", nonSmoking);
-  if (minRating) query.set("minRating", minRating);
-
-  const response = await fetch(`${baseUrl}/api/rooms?${query.toString()}`, {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  if (!Number.isInteger(parsedGuestCount) || parsedGuestCount < 1) {
     return [];
   }
 
-  const data = (await response.json()) as { rooms?: RoomSearchResult[] };
-
-  return data.rooms ?? [];
+  return searchAvailableRooms({
+    checkInDate,
+    checkOutDate,
+    guestCount: parsedGuestCount,
+    petsAllowed: petsAllowed === "true",
+    nonSmoking: nonSmoking === "true",
+    minRating: minRating ? Number(minRating) : undefined,
+  });
 }
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -65,8 +62,24 @@ export default async function Home({ searchParams }: HomeProps) {
   const hasSearched =
     params.checkInDate && params.checkOutDate && params.guestCount;
 
+  const unavailableRoomId = params.unavailableRoomId
+    ? Number(params.unavailableRoomId)
+    : undefined;
+
+  const bookingErrorMessage =
+    params.bookingError === "room-not-found"
+      ? "The selected room is no longer available. Please search again."
+      : params.bookingError === "room-unavailable"
+        ? unavailableRoomId
+          ? `Room #${unavailableRoomId} is no longer available for the selected dates. Choose another room or change your dates.`
+          : "This room is no longer available for the selected dates. Choose another room or change your dates."
+      : params.bookingError === "invalid-selection"
+        ? "Your booking link is invalid. Use future check-in/check-out dates and try again."
+        : null;
+
   return (
     <main className="min-h-screen bg-[#f7f4ef]">
+      <SearchPageRefreshScript hasSearch={Boolean(hasSearched)} />
       <section className="bg-[#3a2418] text-white">
         <div className="max-w-6xl mx-auto px-6 py-12">
           <p className="uppercase tracking-[0.35em] text-[#c9b38c] text-sm">
@@ -85,6 +98,12 @@ export default async function Home({ searchParams }: HomeProps) {
       </section>
 
       <section className="max-w-6xl mx-auto px-6 -mt-8 relative z-10">
+        {bookingErrorMessage && (
+          <div className="mb-4 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            {bookingErrorMessage}
+          </div>
+        )}
+
         <SearchForm
           defaultCheckInDate={params.checkInDate}
           defaultCheckOutDate={params.checkOutDate}
@@ -97,32 +116,15 @@ export default async function Home({ searchParams }: HomeProps) {
 
       <section className="max-w-6xl mx-auto px-6 py-10">
         {hasSearched && (
-          <div className="mb-6">
-            <h2 className="font-serif text-3xl text-gray-900">
-              Available Rooms
-            </h2>
-
-            <p className="text-gray-600 mt-1">
-              {rooms.length} room option{rooms.length === 1 ? "" : "s"} found
-              for your stay.
-            </p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {rooms.map((room) => (
-            <RoomCard key={room.id} room={room} />
-          ))}
-        </div>
-
-        {hasSearched && rooms.length === 0 && (
-          <div className="bg-white border rounded-sm p-8 text-center">
-            <h3 className="font-serif text-2xl">No rooms available</h3>
-
-            <p className="text-gray-600 mt-2">
-              Please adjust your dates, guest count, or filters and try again.
-            </p>
-          </div>
+          <RoomSearchResults
+            initialRooms={rooms}
+            checkInDate={params.checkInDate!}
+            checkOutDate={params.checkOutDate!}
+            guestCount={params.guestCount!}
+            petsAllowed={params.petsAllowed}
+            nonSmoking={params.nonSmoking}
+            minRating={params.minRating}
+          />
         )}
       </section>
     </main>

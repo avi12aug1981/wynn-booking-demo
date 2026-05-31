@@ -1,7 +1,13 @@
-import { Star, Users, PawPrint, Ban, CheckCircle } from "lucide-react";
+import Image from "next/image";
+import BookNowButton from "./BookNowButton";
+import { Ban, CheckCircle, PawPrint, Star, Users } from "lucide-react";
 import { getAmenityIcon } from "@/app/lib/amenity-icons";
 
 type RoomCardProps = {
+  checkInDate?: string;
+  checkOutDate?: string;
+  guestCount?: string;
+  onUnavailable?: (message: string) => void;
   room: {
     id: number;
     name: string;
@@ -20,21 +26,29 @@ type RoomCardProps = {
   };
 };
 
-export default function RoomCard({ room }: RoomCardProps) {
+export default function RoomCard({
+  room,
+  checkInDate,
+  checkOutDate,
+  guestCount,
+  onUnavailable,
+}: RoomCardProps) {
   return (
     <div className="bg-white rounded-sm shadow-md overflow-hidden border border-gray-200">
-      <div className="h-56 bg-gradient-to-br from-stone-200 to-stone-400 flex items-center justify-center">
-        <span className="text-stone-700 font-serif text-xl">{room.name}</span>
-      </div>
+      <Image
+        src={room.imageUrl || "/images/default-room.jpg"}
+        alt={room.name}
+        width={800}
+        height={400}
+        className="w-full h-56 object-cover"
+      />
 
       <div className="p-6">
         <p className="text-xs uppercase tracking-[0.25em] text-[#8c6b43] font-semibold">
           {room.type}
         </p>
 
-        <h3 className="font-serif text-3xl mt-2 text-gray-900">
-          {room.name}
-        </h3>
+        <h3 className="font-serif text-3xl mt-2 text-gray-900">{room.name}</h3>
 
         <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
           <Star size={16} className="fill-[#8c6b43] text-[#8c6b43]" />
@@ -42,9 +56,7 @@ export default function RoomCard({ room }: RoomCardProps) {
           <span>({room.reviewCount ?? 0} reviews)</span>
         </div>
 
-        <p className="text-gray-600 mt-4">
-          {room.description}
-        </p>
+        <p className="text-gray-600 mt-4">{room.description}</p>
 
         <div className="flex items-center gap-2 mt-4 text-sm text-gray-700">
           <Users size={16} />
@@ -79,7 +91,7 @@ export default function RoomCard({ room }: RoomCardProps) {
           </span>
         </div>
 
-        <div className="border-t mt-6 pt-5 flex items-end justify-between">
+        <div className="border-t mt-6 pt-5 flex items-end justify-between gap-4">
           <div>
             <p className="text-sm text-gray-500">From</p>
             <p className="text-3xl font-semibold text-gray-900">
@@ -90,14 +102,13 @@ export default function RoomCard({ room }: RoomCardProps) {
             </p>
           </div>
 
-          <button className="bg-[#007a68] hover:bg-[#006250] text-white px-6 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold">
-          <a
-  href={`/booking?roomId=${room.id}`}
-  className="bg-[#007a68] hover:bg-[#006250] text-white px-6 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold"
->
-  Book Now
-</a>
-          </button>
+          <BookNowButton
+            roomId={room.id}
+            checkInDate={checkInDate}
+            checkOutDate={checkOutDate}
+            guestCount={guestCount}
+            onUnavailable={onUnavailable}
+          />
         </div>
       </div>
     </div>

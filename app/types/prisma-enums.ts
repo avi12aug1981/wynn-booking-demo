@@ -56,3 +56,12 @@ export const AgeGroup = {
 } as const;
 
 export type AgeGroup = (typeof AgeGroup)[keyof typeof AgeGroup];
+
+export const BookingSessionStatus = {
+  ACTIVE: "ACTIVE",
+  CONSUMED: "CONSUMED",
+  EXPIRED: "EXPIRED",
+} as const;
+
+export type BookingSessionStatus =
+  (typeof BookingSessionStatus)[keyof typeof BookingSessionStatus];

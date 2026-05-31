@@ -9,6 +9,7 @@ export type BookingGuestRequest = {
 };
 
 export type CreateBookingRequest = {
+  bookingSessionToken?: string;
   roomId: number;
   memberId?: number;
   bookingType: BookingType;

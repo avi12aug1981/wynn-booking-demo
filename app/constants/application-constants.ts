@@ -9,6 +9,9 @@ export const ApplicationConstants = {
 
   PaymentPrefix: "PAY",
 
+  /** Checkout form session TTL — flow state only, not an inventory hold. */
+  BookingSessionTimeoutMinutes: 15,
+
   MaxSpecialRequestLength: 500,
 
   MaxFirstNameLength: 50,

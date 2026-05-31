@@ -73,6 +73,9 @@ export const Messages = {
   
       RoomNoLongerAvailable:
         "This room is no longer available for the selected dates.",
+
+      RoomBookingInProgress:
+        "This room is currently being booked by another guest. Please choose another room or try again shortly.",
   
       BookingCreated:
         "Booking created successfully.",
@@ -85,6 +88,9 @@ export const Messages = {
 
       BookingCancelled:
         "Booking cancelled successfully.",
+
+      InvalidBookingSession:
+        "Your booking session is invalid or has expired. Please search again.",
     },
   
     RoomSearch: {
@@ -102,5 +108,10 @@ export const Messages = {
   
       SearchFailed:
         "Unable to search rooms at this time. Please try again.",
+        PetsNotAllowed: "Pets are not allowed for the selected room.",
+MaxPetsExceeded: "A maximum of 2 pets are allowed per reservation.",
+InvalidPetCount: "Pet count must be zero or greater.",
+MaxGuestCapacityExceeded:
+  "The selected room cannot accommodate the requested number of guests.",
     }
   } as const;
