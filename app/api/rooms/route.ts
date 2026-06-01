@@ -1,9 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { Messages } from "@/app/constants/messages";
+import { apiFail, apiOk } from "@/lib/api/api-response";
+import { handleApiRequest } from "@/lib/api/api-handler";
+import { logger } from "@/lib/logger";
+import { LogEvents, OperationNames } from "@/constants";
 import { searchAvailableRooms } from "@/features/rooms/services/room-search-service";
 
 export async function GET(request: NextRequest) {
-  try {
+  return handleApiRequest(OperationNames.SearchRooms, async () => {
     const searchParams = request.nextUrl.searchParams;
     const checkInValue = searchParams.get("checkInDate");
     const checkOutValue = searchParams.get("checkOutDate");
@@ -13,10 +17,9 @@ export async function GET(request: NextRequest) {
     const minRatingParam = searchParams.get("minRating");
 
     if (!checkInValue || !checkOutValue || !guestCountValue) {
-      return NextResponse.json(
-        { message: Messages.RoomSearch.MissingSearchParameters },
-        { status: 400 }
-      );
+      return apiFail(Messages.RoomSearch.MissingSearchParameters, {
+        status: 400,
+      });
     }
 
     const checkInDate = new Date(checkInValue);
@@ -24,35 +27,34 @@ export async function GET(request: NextRequest) {
     const guestCount = Number(guestCountValue);
     const minRating = minRatingParam ? Number(minRatingParam) : undefined;
 
-    if (Number.isNaN(checkInDate.getTime()) || Number.isNaN(checkOutDate.getTime())) {
-      return NextResponse.json(
-        { message: Messages.RoomSearch.InvalidDates },
-        { status: 400 }
-      );
+    if (
+      Number.isNaN(checkInDate.getTime()) ||
+      Number.isNaN(checkOutDate.getTime())
+    ) {
+      return apiFail(Messages.RoomSearch.InvalidDates, {
+        status: 400,
+      });
     }
 
     if (checkOutDate <= checkInDate) {
-      return NextResponse.json(
-        { message: Messages.Booking.CheckoutMustBeAfterCheckin },
-        { status: 400 }
-      );
+      return apiFail(Messages.Booking.CheckoutMustBeAfterCheckin, {
+        status: 400,
+      });
     }
 
     if (!Number.isInteger(guestCount) || guestCount < 1) {
-      return NextResponse.json(
-        { message: Messages.RoomSearch.InvalidGuestCount },
-        { status: 400 }
-      );
+      return apiFail(Messages.RoomSearch.InvalidGuestCount, {
+        status: 400,
+      });
     }
 
     if (
       minRating !== undefined &&
       (Number.isNaN(minRating) || minRating < 0 || minRating > 5)
     ) {
-      return NextResponse.json(
-        { message: Messages.RoomSearch.InvalidRating },
-        { status: 400 }
-      );
+      return apiFail(Messages.RoomSearch.InvalidRating, {
+        status: 400,
+      });
     }
 
     const result = await searchAvailableRooms({
@@ -64,7 +66,7 @@ export async function GET(request: NextRequest) {
       minRating,
     });
 
-    console.info("Room search completed", {
+    logger.info(OperationNames.SearchRooms, LogEvents.RoomSearchCompleted, {
       checkInDate: checkInValue,
       checkOutDate: checkOutValue,
       guestCount,
@@ -74,13 +76,8 @@ export async function GET(request: NextRequest) {
       roomsFound: result.length,
     });
 
-    return NextResponse.json({ rooms: result });
-  } catch (error) {
-    console.error(Messages.Common.RoomSearchFailed, error);
-
-    return NextResponse.json(
-      { message: Messages.RoomSearch.SearchFailed },
-      { status: 500 }
-    );
-  }
+    return apiOk({
+      rooms: result,
+    });
+  });
 }

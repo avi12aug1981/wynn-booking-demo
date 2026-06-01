@@ -1,14 +1,15 @@
 export const OperationNames = {
-    CreateBookingSession: "CreateBookingSession",
-  
-    SearchRooms: "SearchRooms",
-    GetRoomDetails: "GetRoomDetails",
-  
-    CreateBooking: "CreateBooking",
-    GetBooking: "GetBooking",
-    CancelBooking: "CancelBooking",
-  
-    GetConfirmation: "GetConfirmation",
-  
-    DemoAdmin: "DemoAdmin",
-  } as const;
+  CreateBookingSession: "CreateBookingSession",
+  GetBookingSession: "GetBookingSession",
+
+  SearchRooms: "SearchRooms",
+  GetRoomDetails: "GetRoomDetails",
+
+  CreateBooking: "CreateBooking",
+  GetBooking: "GetBooking",
+  CancelBooking: "CancelBooking",
+
+  GetConfirmation: "GetConfirmation",
+
+  DemoAdmin: "DemoAdmin",
+} as const;

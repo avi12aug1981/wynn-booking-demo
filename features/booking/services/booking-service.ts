@@ -1,3 +1,7 @@
+import { bookingRepository } from "@/features/booking/services/booking-repository";
+import { bookingSessionRepository } from "@/features/booking/services/booking-session-repository";
+import { logger } from "@/lib/logger";
+import { LogEvents, OperationNames } from "@/constants";
 import {
   BookingSessionStatus,
   BookingStatus,
@@ -127,9 +131,8 @@ export async function createBooking(request: CreateBookingRequest) {
   let bookingSessionId: number | undefined;
 
   if (request.bookingSessionToken) {
-    const session = await prisma.bookingSession.findUnique({
-      where: { token: request.bookingSessionToken },
-    });
+    const session =
+  await bookingSessionRepository.findByToken(request.bookingSessionToken);
 
     if (!session || session.status !== BookingSessionStatus.ACTIVE) {
       return {
@@ -140,10 +143,7 @@ export async function createBooking(request: CreateBookingRequest) {
     }
 
     if (session.expiresAt <= new Date()) {
-      await prisma.bookingSession.update({
-        where: { id: session.id },
-        data: { status: BookingSessionStatus.EXPIRED },
-      });
+      await bookingSessionRepository.expireSession(session.id);
 
       return {
         success: false,
@@ -270,7 +270,7 @@ export async function createBooking(request: CreateBookingRequest) {
       }
     );
 
-    console.info("Booking created successfully", {
+    logger.info(OperationNames.CreateBooking, LogEvents.BookingCreated, {
       referenceNumber: booking.referenceNumber,
       roomId: booking.roomId,
       bookingType: booking.bookingType,
@@ -299,22 +299,9 @@ export async function createBooking(request: CreateBookingRequest) {
     throw error;
   }
 }
-
 export async function getBookingByReferenceNumber(referenceNumber: string) {
-  const booking = await prisma.booking.findUnique({
-    where: {
-      referenceNumber,
-    },
-    include: {
-      room: true,
-      member: true,
-      guests: {
-        orderBy: {
-          sequence: "asc",
-        },
-      },
-    },
-  });
+  const booking =
+    await bookingRepository.findDetailsByReferenceNumber(referenceNumber);
 
   if (!booking) {
     return {
@@ -332,9 +319,7 @@ export async function getBookingByReferenceNumber(referenceNumber: string) {
 }
 
 export async function cancelBooking(referenceNumber: string) {
-  const booking = await prisma.booking.findUnique({
-    where: { referenceNumber },
-  });
+  const booking = await bookingRepository.findByReferenceNumber(referenceNumber);
 
   if (!booking) {
     return {
@@ -352,15 +337,10 @@ export async function cancelBooking(referenceNumber: string) {
     };
   }
 
-  const cancelledBooking = await prisma.booking.update({
-    where: { referenceNumber },
-    data: {
-      status: BookingStatus.CANCELLED,
-      paymentStatus: PaymentStatus.REFUNDED,
-    },
-  });
+  const cancelledBooking =
+    await bookingRepository.cancelByReferenceNumber(referenceNumber);
 
-  console.info("Booking cancelled successfully", {
+  logger.info(OperationNames.CancelBooking, LogEvents.BookingCancelled, {
     referenceNumber: cancelledBooking.referenceNumber,
   });
 

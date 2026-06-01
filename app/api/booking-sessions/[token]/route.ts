@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { BookingSessionStatus } from "@/app/types/prisma-enums";
 import { prisma } from "@/app/lib/prisma";
-import { Messages } from "@/app/constants/messages";
-import { randomUUID } from "crypto";
+import { ApiMessages, OperationNames } from "@/constants";
+import { apiFail, apiOk } from "@/lib/api/api-response";
+import { handleApiRequest } from "@/lib/api/api-handler";
 
 type RouteParams = {
   params: Promise<{
@@ -10,17 +11,8 @@ type RouteParams = {
   }>;
 };
 
-function generateBookingSessionToken() {
-    const randomPart = randomUUID()
-      .replaceAll("-", "")
-      .slice(0, 16)
-      .toUpperCase();
-  
-    return `BSN_${randomPart}`;
-  }
-
 export async function GET(_request: NextRequest, context: RouteParams) {
-  try {
+  return handleApiRequest(OperationNames.GetBookingSession, async () => {
     const { token } = await context.params;
 
     const session = await prisma.bookingSession.findUnique({
@@ -33,17 +25,15 @@ export async function GET(_request: NextRequest, context: RouteParams) {
     });
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, message: "Booking session not found." },
-        { status: 404 }
-      );
+      return apiFail(ApiMessages.BookingSessionNotFound, {
+        status: 404,
+      });
     }
 
     if (session.status !== BookingSessionStatus.ACTIVE) {
-      return NextResponse.json(
-        { success: false, message: "Booking session is no longer active." },
-        { status: 400 }
-      );
+      return apiFail(ApiMessages.BookingSessionInactive, {
+        status: 400,
+      });
     }
 
     if (session.expiresAt < new Date()) {
@@ -56,22 +46,11 @@ export async function GET(_request: NextRequest, context: RouteParams) {
         },
       });
 
-      return NextResponse.json(
-        { success: false, message: "Booking session has expired." },
-        { status: 400 }
-      );
+      return apiFail(ApiMessages.BookingSessionExpired, {
+        status: 400,
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: session,
-    });
-  } catch (error) {
-    console.error("Get booking session failed", error);
-
-    return NextResponse.json(
-      { success: false, message: Messages.Common.UnexpectedError },
-      { status: 500 }
-    );
-  }
+    return apiOk(session);
+  });
 }
