@@ -2,7 +2,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { ApplicationConstants } from "@/app/constants";
 import { BookingSessionStatus } from "@/app/types/prisma-enums";
-import BookingForm from "@/app/components/BookingForm";
+import BookingForm from "@/features/booking/components/BookingForm";
 import { prisma } from "@/app/lib/prisma";
 
 type BookingPageProps = {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Hand } from "lucide-react";
 import { Messages } from "@/app/constants/messages";
 import { SecurityConstants } from "@/constants";
-import AppButton from "./AppButton";
+import AppButton from "@/app/components/AppButton";
 
 type BookNowButtonProps = {
   roomId: number;

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import BookNowButton from "@/app/components/BookNowButton";
+import BookNowButton from "@/features/booking/components/BookNowButton";
 import { Ban, CheckCircle, PawPrint, Star, Users } from "lucide-react";
 import { getAmenityIcon } from "@/app/lib/amenity-icons";
 import Link from "next/link";

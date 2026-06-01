@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { markSearchResultsStale } from "@/app/constants/search-storage";
 import { CreditCard } from "lucide-react";
-import AppButton from "./AppButton";
+import AppButton from "@/app/components/AppButton";
 
   type BookingFormProps = {
     bookingSessionToken?: string;
