@@ -1,11 +1,50 @@
 import { NextRequest } from "next/server";
-import { ApiMessages } from "@/constants";
-import { apiFail, apiOk } from "@/lib/api/api-response";
+import { ApiMessages, OperationNames, ValidationMessages } from "@/constants";
+import { apiFail, apiOk, apiValidationFail } from "@/lib/api/api-response";
 import { handleApiRequest } from "@/lib/api/api-handler";
-import { validateApiKey } from "@/lib/security";
+import { sanitizeText, validateApiKey } from "@/lib/security";
 import { calculateNumberOfNights } from "@/app/lib/availability";
 import { createBookingSession } from "@/app/lib/services/booking-session-service";
-import { OperationNames } from "@/constants";
+
+type BookingSessionRequest = {
+  roomId: number;
+  checkInDate: string;
+  checkOutDate: string;
+  guestCount: number;
+};
+
+function parseBookingSessionRequest(body: unknown): BookingSessionRequest {
+  const payload = body as Record<string, unknown>;
+
+  return {
+    roomId: Number(payload.roomId),
+    checkInDate: sanitizeText(payload.checkInDate),
+    checkOutDate: sanitizeText(payload.checkOutDate),
+    guestCount: Number(payload.guestCount),
+  };
+}
+
+function validateBookingSessionRequest(request: BookingSessionRequest): string[] {
+  const errors: string[] = [];
+
+  if (!Number.isInteger(request.roomId) || request.roomId <= 0) {
+    errors.push(ValidationMessages.RoomRequired);
+  }
+
+  if (!request.checkInDate) {
+    errors.push(ValidationMessages.RequiredField);
+  }
+
+  if (!request.checkOutDate) {
+    errors.push(ValidationMessages.RequiredField);
+  }
+
+  if (!Number.isInteger(request.guestCount) || request.guestCount < 1) {
+    errors.push(ValidationMessages.InvalidGuestCount);
+  }
+
+  return errors;
+}
 
 export async function POST(request: NextRequest) {
   return handleApiRequest(OperationNames.CreateBookingSession, async () => {
@@ -18,13 +57,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    const bookingSessionRequest = parseBookingSessionRequest(body);
+    const validationErrors =
+      validateBookingSessionRequest(bookingSessionRequest);
 
-    const result = await createBookingSession({
-      roomId: Number(body.roomId),
-      checkInDate: String(body.checkInDate),
-      checkOutDate: String(body.checkOutDate),
-      guestCount: Number(body.guestCount),
-    });
+    if (validationErrors.length > 0) {
+      return apiValidationFail(validationErrors);
+    }
+
+    const result = await createBookingSession(bookingSessionRequest);
 
     if (!result.success) {
       return apiFail(result.message, {
@@ -37,8 +78,8 @@ export async function POST(request: NextRequest) {
         token: result.token,
         redirectUrl: result.redirectUrl,
         numberOfNights: calculateNumberOfNights(
-          new Date(String(body.checkInDate)),
-          new Date(String(body.checkOutDate))
+          new Date(bookingSessionRequest.checkInDate),
+          new Date(bookingSessionRequest.checkOutDate)
         ),
       },
       {
