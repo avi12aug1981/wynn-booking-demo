@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Messages } from "@/app/constants/messages";
-import { cancelBooking } from "@/app/lib/services/booking-service";
+import { cancelBooking } from "@/features/booking/services/booking-service";
 
 type RouteParams = {
   params: Promise<{

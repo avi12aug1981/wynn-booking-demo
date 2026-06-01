@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createBookingSession } from "@/app/lib/services/booking-session-service";
+import { createBookingSession } from "@/features/booking/services/booking-session-service";
+
 
 function buildSearchUrl(
   checkInDate?: string | null,
   checkOutDate?: string | null,
   guestCount?: string | null,
-  bookingError?: string,
+  bookingError?: string,  
   unavailableRoomId?: number
 ) {
   const params = new URLSearchParams();

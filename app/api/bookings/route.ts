@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Messages } from "@/app/constants/messages";
-import { createBooking } from "@/app/lib/services/booking-service";
+import { createBooking } from "@/features/booking/services/booking-service";
 
 export async function POST(request: NextRequest) {
   try {

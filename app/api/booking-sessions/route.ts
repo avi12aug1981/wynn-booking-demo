@@ -4,7 +4,7 @@ import { apiFail, apiOk, apiValidationFail } from "@/lib/api/api-response";
 import { handleApiRequest } from "@/lib/api/api-handler";
 import { sanitizeText, validateApiKey } from "@/lib/security";
 import { calculateNumberOfNights } from "@/app/lib/availability";
-import { createBookingSession } from "@/app/lib/services/booking-session-service";
+import { createBookingSession } from "@/features/booking/services/booking-session-service"; 
 
 type BookingSessionRequest = {
   roomId: number;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Messages } from "@/app/constants/messages";
-import { getBookingByReferenceNumber } from "@/app/lib/services/booking-service";
+import { getBookingByReferenceNumber } from "@/features/booking/services/booking-service";
 
 type RouteParams = {
   params: Promise<{
