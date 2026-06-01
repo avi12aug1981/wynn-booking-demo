@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Messages } from "@/app/constants/messages";
-import { searchAvailableRooms } from "@/app/lib/services/room-search-service";
+import { searchAvailableRooms } from "@/features/rooms/services/room-search-service";
 
 export async function GET(request: NextRequest) {
   try {

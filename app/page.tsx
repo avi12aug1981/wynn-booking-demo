@@ -1,7 +1,7 @@
 import SearchForm from "./components/SearchForm";
 import RoomSearchResults from "./components/RoomSearchResults";
 import SearchPageRefreshScript from "./components/SearchPageRefreshScript";
-import { searchAvailableRooms } from "@/app/lib/services/room-search-service";
+import { searchAvailableRooms } from "@/features/rooms/services/room-search-service";
 import type { RoomSearchResult } from "@/app/types/room";
 
 export const dynamic = "force-dynamic";

@@ -1,7 +1,6 @@
 import { calculateNumberOfNights } from "@/app/lib/availability";
-import { prisma } from "@/app/lib/prisma";
-import { BookingStatus, RoomStatus } from "@/app/types/prisma-enums";
-import type { RoomRecord, RoomSearchResult } from "@/app/types/room";
+import type { RoomSearchResult } from "@/app/types/room";
+import { roomRepository } from "@/features/rooms/services/room-repository";
 
 export type RoomSearchFilters = {
   checkInDate: string;
@@ -19,35 +18,13 @@ export async function searchAvailableRooms(
   const checkOutDate = new Date(filters.checkOutDate);
   const numberOfNights = calculateNumberOfNights(checkInDate, checkOutDate);
 
-  const rooms: RoomRecord[] = await prisma.room.findMany({
-    where: {
-      isActive: true,
-      status: RoomStatus.AVAILABLE,
-      maxGuests: {
-        gte: filters.guestCount,
-      },
-      petsAllowed: filters.petsAllowed ? true : undefined,
-      smokingAllowed: filters.nonSmoking ? false : undefined,
-      rating: filters.minRating
-        ? {
-            gte: filters.minRating,
-          }
-        : undefined,
-      bookings: {
-        none: {
-          status: BookingStatus.CONFIRMED,
-          checkInDate: {
-            lt: checkOutDate,
-          },
-          checkOutDate: {
-            gt: checkInDate,
-          },
-        },
-      },
-    },
-    orderBy: {
-      pricePerNight: "asc",
-    },
+  const rooms = await roomRepository.findAvailableRooms({
+    checkInDate,
+    checkOutDate,
+    guestCount: filters.guestCount,
+    petsAllowed: filters.petsAllowed,
+    nonSmoking: filters.nonSmoking,
+    minRating: filters.minRating,
   });
 
   return rooms.map((room) => {

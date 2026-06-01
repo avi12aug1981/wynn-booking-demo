@@ -5,6 +5,7 @@ import {
     RepositoryId,
   } from "@/lib/prisma/base-repository";
   import { prisma } from "@/app/lib/prisma";
+  import { BookingStatus, RoomStatus } from "@/app/types/prisma-enums";
   
   type RoomEntity = NonNullable<
     Awaited<ReturnType<typeof prisma.room.findFirst>>
@@ -16,6 +17,15 @@ import {
   type RoomFindManyArgs = NonNullable<Parameters<typeof prisma.room.findMany>[0]>;
   type RoomWhereInput = RoomFindManyArgs["where"];
   type RoomOrderByInput = RoomFindManyArgs["orderBy"];
+  
+  export type RoomAvailabilityCriteria = {
+    checkInDate: Date;
+    checkOutDate: Date;
+    guestCount: number;
+    petsAllowed?: boolean;
+    nonSmoking?: boolean;
+    minRating?: number;
+  };
   
   export class RoomRepository extends RepositoryBase<
     RoomEntity,
@@ -40,6 +50,41 @@ import {
         orderBy: options?.orderBy,
         take: options?.take,
         skip: options?.skip,
+      });
+    }
+  
+    async findAvailableRooms(
+      criteria: RoomAvailabilityCriteria
+    ): Promise<RoomEntity[]> {
+      return prisma.room.findMany({
+        where: {
+          isActive: true,
+          status: RoomStatus.AVAILABLE,
+          maxGuests: {
+            gte: criteria.guestCount,
+          },
+          petsAllowed: criteria.petsAllowed ? true : undefined,
+          smokingAllowed: criteria.nonSmoking ? false : undefined,
+          rating: criteria.minRating
+            ? {
+                gte: criteria.minRating,
+              }
+            : undefined,
+          bookings: {
+            none: {
+              status: BookingStatus.CONFIRMED,
+              checkInDate: {
+                lt: criteria.checkOutDate,
+              },
+              checkOutDate: {
+                gt: criteria.checkInDate,
+              },
+            },
+          },
+        },
+        orderBy: {
+          pricePerNight: "asc",
+        },
       });
     }
   
