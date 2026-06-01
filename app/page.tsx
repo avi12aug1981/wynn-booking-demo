@@ -1,6 +1,6 @@
-import SearchForm from "./components/SearchForm";
-import RoomSearchResults from "./components/RoomSearchResults";
-import SearchPageRefreshScript from "./components/SearchPageRefreshScript";
+import SearchForm from "@/features/rooms/components/SearchForm";
+import RoomSearchResults from "@/features/rooms/components/RoomSearchResults";
+import SearchPageRefreshScript from "@/features/rooms/components/SearchPageRefreshScript";
 import { searchAvailableRooms } from "@/features/rooms/services/room-search-service";
 import type { RoomSearchResult } from "@/app/types/room";
 
