@@ -46,3 +46,6 @@ dev.db
 prisma/dev.dbAGENTS.md
 CLAUDE.md
 .vscode/
+
+# Local application logs
+logs/*.log

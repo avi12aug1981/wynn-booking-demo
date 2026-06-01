@@ -1,10 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Messages } from "@/app/constants/messages";
+import { NextRequest } from "next/server";
+import { ApiMessages } from "@/constants";
+import { apiFail, apiOk } from "@/lib/api/api-response";
+import { handleApiRequest } from "@/lib/api/api-handler";
+import { validateApiKey } from "@/lib/security";
 import { calculateNumberOfNights } from "@/app/lib/availability";
 import { createBookingSession } from "@/app/lib/services/booking-session-service";
+import { OperationNames } from "@/constants";
 
 export async function POST(request: NextRequest) {
-  try {
+  return handleApiRequest(OperationNames.CreateBookingSession, async () => {
+    const isAuthorized = validateApiKey(request);
+
+    if (!isAuthorized) {
+      return apiFail(ApiMessages.Unauthorized, {
+        status: 401,
+      });
+    }
+
     const body = await request.json();
 
     const result = await createBookingSession({
@@ -15,32 +27,23 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
-      return NextResponse.json(
-        { success: false, message: result.message },
-        { status: result.status }
-      );
+      return apiFail(result.message, {
+        status: result.status,
+      });
     }
 
-    return NextResponse.json(
+    return apiOk(
       {
-        success: true,
-        data: {
-          token: result.token,
-          redirectUrl: result.redirectUrl,
-          numberOfNights: calculateNumberOfNights(
-            new Date(String(body.checkInDate)),
-            new Date(String(body.checkOutDate))
-          ),
-        },
+        token: result.token,
+        redirectUrl: result.redirectUrl,
+        numberOfNights: calculateNumberOfNights(
+          new Date(String(body.checkInDate)),
+          new Date(String(body.checkOutDate))
+        ),
       },
-      { status: 201 }
+      {
+        status: 201,
+      }
     );
-  } catch (error) {
-    console.error("Create booking session failed", error);
-
-    return NextResponse.json(
-      { success: false, message: Messages.Common.UnexpectedError },
-      { status: 500 }
-    );
-  }
+  });
 }

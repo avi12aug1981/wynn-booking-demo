@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Hand } from "lucide-react";
 import { Messages } from "@/app/constants/messages";
+import { SecurityConstants } from "@/constants";
 import AppButton from "./AppButton";
 
 type BookNowButtonProps = {
@@ -20,6 +21,13 @@ type ReadyBookNowButtonProps = {
   guestCount: string;
   onUnavailable?: (message: string) => void;
 };
+
+function getClientApiKey() {
+  return (
+    process.env.NEXT_PUBLIC_INTERNAL_API_KEY ??
+    SecurityConstants.DefaultInternalApiKey
+  );
+}
 
 function ReadyBookNowButton({
   roomId,
@@ -40,6 +48,7 @@ function ReadyBookNowButton({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          [SecurityConstants.ApiKeyHeaderName]: getClientApiKey(),
         },
         body: JSON.stringify({
           roomId,
@@ -81,6 +90,7 @@ function ReadyBookNowButton({
         <div className="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {errorMessage}
         </div>
+
         <AppButton
           type="button"
           variant="link"
