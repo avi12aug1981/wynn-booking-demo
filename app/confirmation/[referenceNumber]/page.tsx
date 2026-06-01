@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import PrintReservationButton from "@/app/components/PrintReservationButton";
+import PrintReservationButton from "@/features/confirmation/components/PrintReservationButton";
 
 type ConfirmationPageProps = {
   params: Promise<{
