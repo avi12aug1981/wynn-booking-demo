@@ -14,6 +14,14 @@ type RoomSearchResultsProps = {
   minRating?: string;
 };
 
+type RoomsApiResponse = {
+  success?: boolean;
+  data?: {
+    rooms?: RoomSearchResult[];
+  };
+  rooms?: RoomSearchResult[];
+};
+
 export default function RoomSearchResults({
   initialRooms,
   checkInDate,
@@ -46,8 +54,9 @@ export default function RoomSearchResults({
       });
 
       if (response.ok) {
-        const data = (await response.json()) as { rooms?: RoomSearchResult[] };
-        setRooms(data.rooms ?? []);
+        const data = (await response.json()) as RoomsApiResponse;
+
+        setRooms(data.data?.rooms ?? data.rooms ?? []);
       }
     } finally {
       setIsRefreshing(false);
@@ -77,7 +86,9 @@ export default function RoomSearchResults({
         <p className="text-gray-600 mt-1">
           {isRefreshing
             ? "Checking latest availability..."
-            : `${rooms.length} room option${rooms.length === 1 ? "" : "s"} found for your stay.`}
+            : `${rooms.length} room option${
+                rooms.length === 1 ? "" : "s"
+              } found for your stay.`}
         </p>
       </div>
 

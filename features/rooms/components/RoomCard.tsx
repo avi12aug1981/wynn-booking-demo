@@ -105,7 +105,14 @@ export default function RoomCard({
 
   <div className="flex gap-3">
     <Link
-      href={`/rooms/${room.id}`}
+    href={{
+      pathname: `/rooms/${room.id}`,
+      query: {
+        checkInDate,
+        checkOutDate,
+        guestCount,
+      },
+    }}
       className="border border-[#3a2418] text-[#3a2418] px-5 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold hover:bg-stone-50"
     >
       Details

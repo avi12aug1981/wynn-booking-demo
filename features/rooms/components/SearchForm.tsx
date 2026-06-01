@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { todayDateInputValue } from "@/app/lib/utils/date";
-import AppButton from "@/app/components/AppButton";
+import AppButton from "@/components/ui/atoms/AppButton";
 
 type SearchFormProps = {
   defaultCheckInDate?: string;
