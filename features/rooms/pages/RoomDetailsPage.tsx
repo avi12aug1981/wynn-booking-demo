@@ -2,6 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { roomGallery } from "@/app/lib/room-gallery";
+import type { PageRouteContext } from "@/features/app-router/route-types";
+
+
 import {
   Ban,
   CheckCircle,
@@ -11,17 +14,22 @@ import {
 } from "lucide-react";
 import { prisma } from "@/app/lib/prisma";
 import { getAmenityIcon } from "@/app/lib/amenity-icons";
+import BookNowButton from "@/features/booking/components/BookNowButton";
 
-type RoomDetailsPageProps = {
-  params: Promise<{
-    roomId: string;
-  }>;
-};
+type RoomDetailsPageProps = PageRouteContext;
+
+function getSingleQueryValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 export default async function RoomDetailsPage({
-  params,
+  routeParams,
+  searchParams,
 }: RoomDetailsPageProps) {
-  const { roomId } = await params;
+  const { roomId } = routeParams;
+  const checkInDate = getSingleQueryValue(searchParams.checkInDate);
+const checkOutDate = getSingleQueryValue(searchParams.checkOutDate);
+const guestCount = getSingleQueryValue(searchParams.guestCount);
   const parsedRoomId = Number(roomId);
 
   if (!Number.isInteger(parsedRoomId) || parsedRoomId <= 0) {
@@ -48,6 +56,18 @@ export default async function RoomDetailsPage({
     "/images/tower-suite.jpg",
   ];
 
+  const searchHref =
+    checkInDate && checkOutDate && guestCount
+      ? {
+          pathname: "/",
+          query: {
+            checkInDate,
+            checkOutDate,
+            guestCount,
+          },
+        }
+      : "/";
+
   return (
     <main className="min-h-screen bg-[#f7f4ef]">
       <section className="bg-[#3a2418] text-white">
@@ -56,9 +76,7 @@ export default async function RoomDetailsPage({
             Room Details
           </p>
 
-          <h1 className="font-serif text-4xl mt-3">
-            {room.name}
-          </h1>
+          <h1 className="font-serif text-4xl mt-3">{room.name}</h1>
 
           <p className="text-stone-200 mt-2 max-w-2xl">
             {room.description}
@@ -69,31 +87,31 @@ export default async function RoomDetailsPage({
       <section className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
           <div className="space-y-8">
-          <div className="bg-white rounded-sm shadow-md overflow-hidden border border-stone-200">
-  <Image
-    src={galleryImages[0]}
-    alt={room.name}
-    width={1200}
-    height={650}
-    className="w-full h-[420px] object-cover"
-  />
+            <div className="bg-white rounded-sm shadow-md overflow-hidden border border-stone-200">
+              <Image
+                src={galleryImages[0]}
+                alt={room.name}
+                width={1200}
+                height={650}
+                className="w-full h-[420px] object-cover"
+              />
 
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-white">
-    {galleryImages.slice(0, 4).map((imageUrl, index) => (
-      <div
-        key={`${imageUrl}-${index}`}
-        className="relative h-24 overflow-hidden rounded-sm border border-stone-200"
-      >
-        <Image
-          src={imageUrl}
-          alt={`${room.name} gallery image ${index + 1}`}
-          fill
-          className="object-cover"
-        />
-      </div>
-    ))}
-  </div>
-</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-white">
+                {galleryImages.slice(0, 4).map((imageUrl, index) => (
+                  <div
+                    key={`${imageUrl}-${index}`}
+                    className="relative h-24 overflow-hidden rounded-sm border border-stone-200"
+                  >
+                    <Image
+                      src={imageUrl}
+                      alt={`${room.name} gallery image ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <div className="bg-white rounded-sm shadow-md border border-stone-200 p-6">
               <h2 className="font-serif text-3xl text-[#3a2418]">
@@ -110,24 +128,14 @@ export default async function RoomDetailsPage({
                   <p className="text-sm text-gray-500 mt-2">
                     Maximum Guests
                   </p>
-                  <p className="font-semibold">
-                    Up to {room.maxGuests}
-                  </p>
+                  <p className="font-semibold">Up to {room.maxGuests}</p>
                 </div>
 
                 <div className="border rounded-sm p-4 bg-[#faf8f4]">
-                  {room.petsAllowed ? (
-                    <PawPrint size={20} />
-                  ) : (
-                    <Ban size={20} />
-                  )}
-                  <p className="text-sm text-gray-500 mt-2">
-                    Pet Policy
-                  </p>
+                  {room.petsAllowed ? <PawPrint size={20} /> : <Ban size={20} />}
+                  <p className="text-sm text-gray-500 mt-2">Pet Policy</p>
                   <p className="font-semibold">
-                    {room.petsAllowed
-                      ? "Pets Allowed"
-                      : "No Pets"}
+                    {room.petsAllowed ? "Pets Allowed" : "No Pets"}
                   </p>
                 </div>
 
@@ -137,9 +145,7 @@ export default async function RoomDetailsPage({
                     Smoking Policy
                   </p>
                   <p className="font-semibold">
-                    {room.smokingAllowed
-                      ? "Smoking Room"
-                      : "Non-Smoking"}
+                    {room.smokingAllowed ? "Smoking Room" : "Non-Smoking"}
                   </p>
                 </div>
               </div>
@@ -174,20 +180,15 @@ export default async function RoomDetailsPage({
 
               <div className="space-y-3 text-sm text-gray-700 mt-5">
                 <p>
-                  <span className="font-semibold">Check-in:</span>{" "}
-                  3:00 PM
+                  <span className="font-semibold">Check-in:</span> 3:00 PM
                 </p>
                 <p>
-                  <span className="font-semibold">Check-out:</span>{" "}
-                  11:00 AM
+                  <span className="font-semibold">Check-out:</span> 11:00 AM
                 </p>
+                <p>Valid government-issued photo ID is required at check-in.</p>
                 <p>
-                  Valid government-issued photo ID is required at
-                  check-in.
-                </p>
-                <p>
-                  Room preferences, views, and upgrades are subject
-                  to availability.
+                  Room preferences, views, and upgrades are subject to
+                  availability.
                 </p>
                 <p>
                   Cancellation and refund eligibility may vary based on
@@ -211,10 +212,7 @@ export default async function RoomDetailsPage({
             </p>
 
             <div className="flex items-center gap-2 mt-5 text-sm text-gray-700">
-              <Star
-                size={16}
-                className="fill-[#8c6b43] text-[#8c6b43]"
-              />
+              <Star size={16} className="fill-[#8c6b43] text-[#8c6b43]" />
               <span>{Number(room.rating).toFixed(1)}</span>
               <span>({room.reviewCount} reviews)</span>
             </div>
@@ -227,28 +225,54 @@ export default async function RoomDetailsPage({
 
               <div className="flex justify-between">
                 <span>Guests</span>
-                <span className="font-medium">
-                  Up to {room.maxGuests}
-                </span>
+                <span className="font-medium">Up to {room.maxGuests}</span>
               </div>
 
               <div className="flex justify-between">
                 <span>Status</span>
                 <span className="font-medium">{room.status}</span>
               </div>
+
+              {checkInDate && checkOutDate && guestCount && (
+                <>
+                  <div className="flex justify-between">
+                    <span>Check-In</span>
+                    <span className="font-medium">{checkInDate}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Check-Out</span>
+                    <span className="font-medium">{checkOutDate}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Selected Guests</span>
+                    <span className="font-medium">{guestCount}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="mt-6 space-y-3">
+              {checkInDate && checkOutDate && guestCount ? (
+                <BookNowButton
+                  roomId={room.id}
+                  checkInDate={checkInDate}
+                  checkOutDate={checkOutDate}
+                  guestCount={guestCount}
+                />
+              ) : (
+                <p className="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Select dates before starting a reservation.
+                </p>
+              )}
+
               <Link
-                href="/"
+                href={searchHref}
                 className="block text-center border border-[#3a2418] text-[#3a2418] px-5 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold hover:bg-[#f7f4ef]"
               >
-                Search Dates
+                Back to Search
               </Link>
-
-              <p className="text-xs text-gray-500 text-center">
-                Return to search to select dates and start reservation.
-              </p>
             </div>
           </aside>
         </div>

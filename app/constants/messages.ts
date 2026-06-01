@@ -79,6 +79,17 @@ export const Messages = {
     SearchFailed: "Unable to search rooms at this time. Please try again.",
   },
 
+  SearchPage: {
+    RoomNoLongerAvailable:
+      "The selected room is no longer available. Please search again.",
+    RoomUnavailableForDates:
+      "This room is no longer available for the selected dates. Choose another room or change your dates.",
+    RoomUnavailableForDatesWithId:
+      "Room #{roomId} is no longer available for the selected dates. Choose another room or change your dates.",
+    InvalidBookingSelection:
+      "Your booking link is invalid. Use future check-in/check-out dates and try again.",
+  },
+  
   Payment: {
     TermsRequired: "Please accept the booking terms and conditions.",
     BookingFailed: "Unable to complete booking.",
