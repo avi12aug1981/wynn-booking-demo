@@ -8,6 +8,7 @@ import AppButton from "@/components/ui/atoms/AppButton";
   type BookingFormProps = {
     bookingSessionToken?: string;
     roomId: number;
+    maxGuests: number;
     defaultCheckInDate?: string;
     defaultCheckOutDate?: string;
     defaultGuestCount?: number;
@@ -21,6 +22,7 @@ function getTodayDate() {
 export default function BookingForm({
   bookingSessionToken,
   roomId,
+  maxGuests,
   defaultCheckInDate = "",
   defaultCheckOutDate = "",
   defaultGuestCount = 1,

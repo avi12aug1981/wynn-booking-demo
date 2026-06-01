@@ -100,10 +100,11 @@ export default async function BookingPage({
 
       <section className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
-          <BookingForm
-            bookingSessionToken={token}
-            roomId={room.id}
-            petsAllowed={room.petsAllowed}
+        <BookingForm
+  bookingSessionToken={token}
+  roomId={room.id}
+  maxGuests={room.maxGuests}
+  petsAllowed={room.petsAllowed}
             defaultCheckInDate={session.checkInDate
               .toISOString()
               .split("T")[0]}
