@@ -35,8 +35,8 @@ export default function RoomCard({
   onUnavailable,
 }: RoomCardProps) {
   return (
-    <div className="bg-white rounded-sm shadow-md overflow-hidden border border-gray-200">
-      <Image
+    <div className="bg-white rounded-sm shadow-md overflow-hidden border border-gray-200 flex flex-col h-full">
+       <Image
         src={room.imageUrl || "/images/default-room.jpg"}
         alt={room.name}
         width={800}
@@ -44,7 +44,7 @@ export default function RoomCard({
         className="w-full h-40 object-cover"
       />
 
-      <div className="p-6">
+<div className="p-6 flex flex-col flex-1">
         <p className="text-xs uppercase tracking-[0.25em] text-[#8c6b43] font-semibold">
           {room.type}
         </p>
@@ -92,40 +92,40 @@ export default function RoomCard({
           </span>
         </div>
 
-        <div className="border-t mt-6 pt-5 flex items-center justify-between">
-  <div>
-    <p className="text-sm text-gray-500">From</p>
-    <p className="text-3xl font-semibold text-gray-900">
-      ${room.pricePerNight.toFixed(2)}
-    </p>
-    <p className="text-xs text-gray-500">
-      per night · ${room.estimatedSubtotal.toFixed(2)} subtotal
-    </p>
-  </div>
+        <div className="border-t mt-auto pt-5 space-y-4">
+          <div>
+            <p className="text-sm text-gray-500">From</p>
+            <p className="text-3xl font-semibold text-gray-900">
+              ${room.pricePerNight.toFixed(2)}
+            </p>
+            <p className="text-xs text-gray-500">
+              per night · ${room.estimatedSubtotal.toFixed(2)} subtotal
+            </p>
+          </div>
 
-  <div className="flex gap-3">
-    <Link
-    href={{
-      pathname: `/rooms/${room.id}`,
-      query: {
-        checkInDate,
-        checkOutDate,
-        guestCount,
-      },
-    }}
-      className="border border-[#3a2418] text-[#3a2418] px-5 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold hover:bg-stone-50"
-    >
-      Details
-    </Link>
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              href={{
+                pathname: `/rooms/${room.id}`,
+                query: {
+                  checkInDate,
+                  checkOutDate,
+                  guestCount,
+                },
+              }}
+              className="text-center border border-[#3a2418] text-[#3a2418] px-4 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold hover:bg-stone-50"
+            >
+              Details
+            </Link>
 
-    <BookNowButton
-      roomId={room.id}
-      checkInDate={checkInDate}
-      checkOutDate={checkOutDate}
-      guestCount={guestCount}
-    />
-  </div>
-</div>
+            <BookNowButton
+              roomId={room.id}
+              checkInDate={checkInDate}
+              checkOutDate={checkOutDate}
+              guestCount={guestCount}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

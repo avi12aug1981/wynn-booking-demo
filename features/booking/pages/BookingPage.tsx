@@ -5,6 +5,7 @@ import { BookingSessionStatus } from "@/app/types/prisma-enums";
 import BookingForm from "@/features/booking/components/BookingForm";
 import { prisma } from "@/app/lib/prisma";
 import type { PageRouteContext } from "@/features/app-router/route-types";
+import Link from "next/link";
 
 type BookingPageProps = PageRouteContext;
 
@@ -16,7 +17,7 @@ function calculateNumberOfNights(
 
   return Math.ceil(
     (checkOutDate.getTime() - checkInDate.getTime()) /
-      millisecondsPerDay
+    millisecondsPerDay
   );
 }
 
@@ -25,6 +26,8 @@ export default async function BookingPage({
 }: BookingPageProps) {
   const { token } = routeParams;
 
+  // Booking page only accepts active reservation sessions.
+  // Session validation prevents stale or direct URL access.
   const session = await prisma.bookingSession.findUnique({
     where: {
       token,
@@ -100,11 +103,11 @@ export default async function BookingPage({
 
       <section className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
-        <BookingForm
-  bookingSessionToken={token}
-  roomId={room.id}
-  maxGuests={room.maxGuests}
-  petsAllowed={room.petsAllowed}
+          <BookingForm
+            bookingSessionToken={token}
+            roomId={room.id}
+            maxGuests={room.maxGuests}
+            petsAllowed={room.petsAllowed}
             defaultCheckInDate={session.checkInDate
               .toISOString()
               .split("T")[0]}
@@ -192,6 +195,14 @@ export default async function BookingPage({
                   <span>Guests</span>
                   <span>{session.guestCount}</span>
                 </div>
+                <Link
+                  href={`/?checkInDate=${session.checkInDate.toISOString().split("T")[0]
+                    }&checkOutDate=${session.checkOutDate.toISOString().split("T")[0]
+                    }&guestCount=${session.guestCount}`}
+                  className="block mt-4 text-center border border-[#3a2418] text-[#3a2418] px-4 py-2 rounded-sm text-xs font-semibold uppercase tracking-widest hover:bg-[#f7f4ef]"
+                >
+                  Modify Search
+                </Link>
               </div>
 
               <div className="mt-6 border-t pt-5 space-y-3 text-sm">

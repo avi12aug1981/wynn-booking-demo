@@ -4,6 +4,12 @@ import { useState } from "react";
 import { todayDateInputValue } from "@/app/lib/utils/date";
 import AppButton from "@/components/ui/atoms/AppButton";
 
+function addDaysToDateInputValue(dateInputValue: string, days: number) {
+  const date = new Date(`${dateInputValue}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split("T")[0];
+}
+
 type SearchFormProps = {
   defaultCheckInDate?: string;
   defaultCheckOutDate?: string;
@@ -22,8 +28,12 @@ export default function SearchForm({
   defaultMinRating = "",
 }: SearchFormProps) {
   const today = todayDateInputValue();
-  const [checkInDate, setCheckInDate] = useState(defaultCheckInDate);
-  const [checkOutDate, setCheckOutDate] = useState(defaultCheckOutDate);
+  const initialCheckInDate = defaultCheckInDate || today;
+  const initialCheckOutDate =
+    defaultCheckOutDate || addDaysToDateInputValue(today, 2);
+
+  const [checkInDate, setCheckInDate] = useState(initialCheckInDate);
+  const [checkOutDate, setCheckOutDate] = useState(initialCheckOutDate);
   const [guestCount, setGuestCount] = useState(Number(defaultGuestCount));
   const [petsAllowed, setPetsAllowed] = useState(defaultPetsAllowed);
   const [nonSmoking, setNonSmoking] = useState(defaultNonSmoking);

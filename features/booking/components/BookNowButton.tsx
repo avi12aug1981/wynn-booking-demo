@@ -38,7 +38,7 @@ function ReadyBookNowButton({
 }: ReadyBookNowButtonProps) {
   const [errorMessage, setErrorMessage] = useState("");
   const [isChecking, setIsChecking] = useState(false);
-
+/** Book  Now Button Click Handler */
   async function handleBookNow() {
     setErrorMessage("");
     setIsChecking(true);
