@@ -21,7 +21,7 @@ function buildSearchUrl(
 
   const query = params.toString();
 
-  return query ? `/?${query}` : "/";
+  return query ? `/search?${query}` : "/search";
 }
 
 export async function GET(request: NextRequest) {

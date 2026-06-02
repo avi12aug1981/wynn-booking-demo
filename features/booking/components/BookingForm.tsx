@@ -1,9 +1,90 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  EMPTY_GUEST_DETAILS_DEFAULTS,
+  getDemoGuestDetailsDefaults,
+  getDemoUserType,
+} from "@/app/constants/demo-user";
+import { Messages } from "@/app/constants/messages";
+import type { BookingType } from "@/app/types/prisma-enums";
 import { markSearchResultsStale } from "@/app/constants/search-storage";
 import AppButton from "@/components/ui/atoms/AppButton";
+
+const ZIP_CODE_PATTERN = /^\d{5,10}$/;
+const PHONE_NUMBER_PATTERN = /^\d{10,15}$/;
+
+function normalizeDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function validateZipCode(value: string, requiredMessage: string, invalidMessage: string) {
+  const digits = normalizeDigits(value);
+
+  if (!digits) {
+    return requiredMessage;
+  }
+
+  if (!ZIP_CODE_PATTERN.test(digits)) {
+    return invalidMessage;
+  }
+
+  return null;
+}
+
+function validatePhoneNumber(value: string) {
+  const digits = normalizeDigits(value);
+
+  if (!digits) {
+    return Messages.Booking.PhoneRequired;
+  }
+
+  if (!PHONE_NUMBER_PATTERN.test(digits)) {
+    return Messages.Booking.InvalidPhoneNumber;
+  }
+
+  return null;
+}
+
+const DIGIT_ONLY_NAVIGATION_KEYS = new Set([
+  "Backspace",
+  "Delete",
+  "Tab",
+  "Escape",
+  "Enter",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "Home",
+  "End",
+]);
+
+function handleDigitOnlyKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  if (DIGIT_ONLY_NAVIGATION_KEYS.has(event.key)) {
+    return;
+  }
+
+  if (event.ctrlKey || event.metaKey || event.altKey) {
+    return;
+  }
+
+  if (/^\d$/.test(event.key)) {
+    return;
+  }
+
+  event.preventDefault();
+}
+
+function handleDigitsOnlyInput(event: FormEvent<HTMLInputElement>) {
+  const { currentTarget } = event;
+  const digitsOnly = currentTarget.value.replace(/\D/g, "");
+
+  if (currentTarget.value !== digitsOnly) {
+    currentTarget.value = digitsOnly;
+  }
+}
 
 type BookingFormProps = {
   bookingSessionToken?: string;
@@ -26,13 +107,25 @@ export default function BookingForm({
 }: BookingFormProps) {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isClientReady, setIsClientReady] = useState(false);
+
+  useEffect(() => {
+    setIsClientReady(true);
+  }, []);
+
+  const guestDetails = isClientReady
+    ? getDemoGuestDetailsDefaults()
+    : EMPTY_GUEST_DETAILS_DEFAULTS;
+  const bookingType: BookingType =
+    isClientReady && getDemoUserType() === "MEMBER" ? "MEMBER" : "GUEST";
+  const isDemoMember = bookingType === "MEMBER";
 
   const confirmedGuestCount = Math.min(defaultGuestCount, maxGuests);
 
   const searchHref =
     defaultCheckInDate && defaultCheckOutDate && confirmedGuestCount
-      ? `/?checkInDate=${defaultCheckInDate}&checkOutDate=${defaultCheckOutDate}&guestCount=${confirmedGuestCount}`
-      : "/";
+      ? `/search?checkInDate=${defaultCheckInDate}&checkOutDate=${defaultCheckOutDate}&guestCount=${confirmedGuestCount}`
+      : "/search";
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,10 +141,46 @@ export default function BookingForm({
       return;
     }
 
+    const zipCode = String(formData.get("zipCode"));
+    const phoneNumber = String(formData.get("phoneNumber"));
+    const billingZip = String(formData.get("billingZip"));
+
+    const zipCodeError = validateZipCode(
+      zipCode,
+      Messages.Booking.ZipCodeRequired,
+      Messages.Booking.InvalidZipCode
+    );
+
+    if (zipCodeError) {
+      setErrorMessage(zipCodeError);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const phoneError = validatePhoneNumber(phoneNumber);
+
+    if (phoneError) {
+      setErrorMessage(phoneError);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const billingZipError = validateZipCode(
+      billingZip,
+      Messages.Booking.ZipCodeRequired,
+      Messages.Booking.InvalidBillingZip
+    );
+
+    if (billingZipError) {
+      setErrorMessage(billingZipError);
+      setIsSubmitting(false);
+      return;
+    }
+
     const payload = {
       roomId,
       bookingSessionToken,
-      bookingType: "GUEST",
+      bookingType,
       firstName: String(formData.get("firstName")),
       lastName: String(formData.get("lastName")),
       gender: "PREFER_NOT_TO_SAY",
@@ -66,7 +195,7 @@ export default function BookingForm({
       addressLine2: String(formData.get("addressLine2") || ""),
       city: String(formData.get("city")),
       state: String(formData.get("state")),
-      zipCode: String(formData.get("zipCode")),
+      zipCode: normalizeDigits(zipCode),
       country: String(formData.get("country")),
       specialRequests: String(formData.get("specialRequests") || ""),
       guests: [
@@ -100,8 +229,15 @@ export default function BookingForm({
     window.location.replace(`/confirmation/${result.data.referenceNumber}`);
   }
 
+  if (!isClientReady) {
+    return (
+      <div className="bg-white p-6 rounded-sm shadow-md min-h-[480px] animate-pulse" />
+    );
+  }
+
   return (
     <form
+      key={bookingType}
       onSubmit={handleSubmit}
       className="bg-white p-6 rounded-sm shadow-md space-y-8"
     >
@@ -112,6 +248,11 @@ export default function BookingForm({
         <h2 className="font-serif text-3xl mt-2 text-[#3a2418]">
           Complete Reservation
         </h2>
+        {isDemoMember && (
+          <p className="text-sm text-[#8c6b43] mt-2">
+            Demo member profile applied. You can edit any field before confirming.
+          </p>
+        )}
       </div>
 
       {errorMessage && (
@@ -135,6 +276,7 @@ export default function BookingForm({
           <span className="text-sm font-medium">First Name</span>
           <input
             name="firstName"
+            defaultValue={guestDetails.firstName}
             className="w-full border p-3 rounded-sm"
             required
           />
@@ -144,6 +286,7 @@ export default function BookingForm({
           <span className="text-sm font-medium">Last Name</span>
           <input
             name="lastName"
+            defaultValue={guestDetails.lastName}
             className="w-full border p-3 rounded-sm"
             required
           />
@@ -154,6 +297,7 @@ export default function BookingForm({
           <input
             name="contactEmail"
             type="email"
+            defaultValue={guestDetails.contactEmail}
             className="w-full border p-3 rounded-sm"
             required
           />
@@ -164,8 +308,17 @@ export default function BookingForm({
           <input
             name="phoneNumber"
             type="tel"
+            inputMode="numeric"
+            autoComplete="tel"
+            pattern="[0-9]{10,15}"
+            minLength={10}
+            maxLength={15}
             placeholder="7025551234"
+            title="Enter 10 to 15 digits"
+            defaultValue={guestDetails.phoneNumber}
             className="w-full border p-3 rounded-sm"
+            onKeyDown={handleDigitOnlyKeyDown}
+            onInput={handleDigitsOnlyInput}
             required
           />
         </label>
@@ -176,6 +329,7 @@ export default function BookingForm({
           <span className="text-sm font-medium">Address Line 1</span>
           <input
             name="addressLine1"
+            defaultValue={guestDetails.addressLine1}
             className="w-full border p-3 rounded-sm"
             required
           />
@@ -183,24 +337,49 @@ export default function BookingForm({
 
         <label className="space-y-1 md:col-span-2">
           <span className="text-sm font-medium">Address Line 2</span>
-          <input name="addressLine2" className="w-full border p-3 rounded-sm" />
+          <input
+            name="addressLine2"
+            defaultValue={guestDetails.addressLine2}
+            className="w-full border p-3 rounded-sm"
+          />
         </label>
 
         <label className="space-y-1">
           <span className="text-sm font-medium">City</span>
-          <input name="city" className="w-full border p-3 rounded-sm" required />
+          <input
+            name="city"
+            defaultValue={guestDetails.city}
+            className="w-full border p-3 rounded-sm"
+            required
+          />
         </label>
 
         <label className="space-y-1">
           <span className="text-sm font-medium">State</span>
-          <input name="state" className="w-full border p-3 rounded-sm" required />
+          <input
+            name="state"
+            defaultValue={guestDetails.state}
+            className="w-full border p-3 rounded-sm"
+            required
+          />
         </label>
 
         <label className="space-y-1">
           <span className="text-sm font-medium">ZIP Code</span>
           <input
             name="zipCode"
+            type="text"
+            inputMode="numeric"
+            autoComplete="postal-code"
+            pattern="[0-9]{5,10}"
+            minLength={5}
+            maxLength={10}
+            placeholder="89109"
+            title="Enter 5 to 10 digits"
+            defaultValue={guestDetails.zipCode}
             className="w-full border p-3 rounded-sm"
+            onKeyDown={handleDigitOnlyKeyDown}
+            onInput={handleDigitsOnlyInput}
             required
           />
         </label>
@@ -210,7 +389,7 @@ export default function BookingForm({
           <select
             name="country"
             className="w-full border p-3 rounded-sm"
-            defaultValue="USA"
+            defaultValue={guestDetails.country}
             required
           >
             <option value="USA">United States</option>
@@ -260,11 +439,16 @@ export default function BookingForm({
             <span className="text-sm font-medium">Credit Card Number</span>
             <input
               name="cardNumber"
+              type="text"
               inputMode="numeric"
+              autoComplete="cc-number"
+              pattern="[0-9]*"
               minLength={13}
               maxLength={19}
               placeholder="4111111111111111"
               className="w-full border p-3 rounded-sm"
+              onKeyDown={handleDigitOnlyKeyDown}
+              onInput={handleDigitsOnlyInput}
               required
             />
           </label>
@@ -317,10 +501,15 @@ export default function BookingForm({
             <span className="text-sm font-medium">CVV</span>
             <input
               name="cvv"
+              type="text"
               inputMode="numeric"
+              autoComplete="cc-csc"
+              pattern="[0-9]*"
               minLength={3}
               maxLength={4}
               className="w-full border p-3 rounded-sm"
+              onKeyDown={handleDigitOnlyKeyDown}
+              onInput={handleDigitsOnlyInput}
               required
             />
           </label>
@@ -329,7 +518,17 @@ export default function BookingForm({
             <span className="text-sm font-medium">Billing ZIP</span>
             <input
               name="billingZip"
+              type="text"
+              inputMode="numeric"
+              autoComplete="postal-code"
+              pattern="[0-9]{5,10}"
+              minLength={5}
+              maxLength={10}
+              placeholder="89109"
+              title="Enter 5 to 10 digits"
               className="w-full border p-3 rounded-sm"
+              onKeyDown={handleDigitOnlyKeyDown}
+              onInput={handleDigitsOnlyInput}
               required
             />
           </label>
@@ -339,9 +538,12 @@ export default function BookingForm({
             <select
               name="billingCountry"
               className="w-full border p-3 rounded-sm"
-              defaultValue="USA"
+              defaultValue=""
               required
             >
+              <option value="" disabled>
+                Country
+              </option>
               <option value="USA">United States</option>
               <option value="INDIA">India</option>
               <option value="CANADA">Canada</option>

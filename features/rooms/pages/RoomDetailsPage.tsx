@@ -33,7 +33,7 @@ const guestCount = getSingleQueryValue(searchParams.guestCount);
   const parsedRoomId = Number(roomId);
 
   if (!Number.isInteger(parsedRoomId) || parsedRoomId <= 0) {
-    redirect("/");
+    redirect("/search");
   }
 
   const room = await prisma.room.findFirst({
@@ -44,7 +44,7 @@ const guestCount = getSingleQueryValue(searchParams.guestCount);
   });
 
   if (!room) {
-    redirect("/");
+    redirect("/search");
   }
 
   const amenities: string[] = room.amenities.split(",");
@@ -59,14 +59,14 @@ const guestCount = getSingleQueryValue(searchParams.guestCount);
   const searchHref =
     checkInDate && checkOutDate && guestCount
       ? {
-          pathname: "/",
+          pathname: "/search",
           query: {
             checkInDate,
             checkOutDate,
             guestCount,
           },
         }
-      : "/";
+      : "/search";
 
   return (
     <main className="min-h-screen bg-[#f7f4ef]">

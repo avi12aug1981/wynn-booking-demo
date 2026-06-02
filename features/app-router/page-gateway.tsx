@@ -5,10 +5,28 @@ import RoomsSearchPage from "@/features/rooms/pages/RoomsSearchPage";
 import RoomDetailsPage from "@/features/rooms/pages/RoomDetailsPage";
 import BookingPage from "@/features/booking/pages/BookingPage";
 import ConfirmationPage from "@/features/confirmation/pages/ConfirmationPage";
+import LoginPage from "@/features/auth/pages/LoginPage";
+import ReservationHistoryPage from "@/features/reservations/pages/ReservationHistoryPage";
+import ReservationDetailsPage from "@/features/reservations/pages/ReservationDetailsPage";
 
+
+/**
+ * Page routes for the application.
+ *
+ * Each route is defined with a pattern and a handler function.
+ * The handler function is responsible for rendering the page component.
+ */
 const pageRoutes: RegisteredPageRoute[] = [
   {
     pattern: "/",
+    handler: (context) => <LoginPage searchParams={context.searchParams} />,
+  },
+  {
+    pattern: "/login",
+    handler: (context) => <LoginPage searchParams={context.searchParams} />,
+  },
+  {
+    pattern: "/search",
     handler: (context) => <RoomsSearchPage {...context} />,
   },
   {
@@ -22,6 +40,14 @@ const pageRoutes: RegisteredPageRoute[] = [
   {
     pattern: "/confirmation/:referenceNumber",
     handler: (context) => <ConfirmationPage {...context} />,
+  },
+  {
+    pattern: "/reservations",
+    handler: () => <ReservationHistoryPage />,
+  },
+  {
+    pattern: "/reservations/:referenceNumber",
+    handler: (context) => <ReservationDetailsPage {...context} />,
   },
 ];
 

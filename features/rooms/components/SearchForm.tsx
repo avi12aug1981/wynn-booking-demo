@@ -54,7 +54,7 @@ export default function SearchForm({
     if (nonSmoking) query.set("nonSmoking", "true");
     if (minRating) query.set("minRating", minRating);
 
-    window.location.href = `/?${query.toString()}`;
+    window.location.href = `/search?${query.toString()}`;
   };
 
   return (

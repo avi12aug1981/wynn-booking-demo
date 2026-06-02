@@ -22,6 +22,10 @@ export const Messages = {
     CityRequired: "City is required.",
     StateRequired: "State is required.",
     ZipCodeRequired: "ZIP code is required.",
+    InvalidZipCode: "ZIP code must be 5 to 10 digits.",
+    PhoneRequired: "Phone number is required.",
+    InvalidPhoneNumber: "Phone number must be 10 to 15 digits.",
+    InvalidBillingZip: "Billing ZIP must be 5 to 10 digits.",
 
     DatesRequired: "Check-in and check-out dates are required.",
     InvalidDates: "Please provide valid booking dates.",
@@ -77,6 +81,15 @@ export const Messages = {
     InvalidGuestCount: "Guest count must be at least 1.",
     InvalidRating: "Minimum rating must be between 0 and 5.",
     SearchFailed: "Unable to search rooms at this time. Please try again.",
+  },
+
+  LoginPage: {
+    SessionNotFound:
+      "Your reservation session was not found. Choose how to continue.",
+    SessionInvalid:
+      "Your reservation session is no longer active. Choose how to continue.",
+    SessionExpired:
+      "Your reservation session has expired. Choose how to continue.",
   },
 
   SearchPage: {

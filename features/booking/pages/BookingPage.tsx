@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { ApplicationConstants } from "@/app/constants";
+import { BookingErrors } from "@/app/constants/booking-errors";
+import { buildLoginUrl } from "@/app/constants/routes";
 import { BookingSessionStatus } from "@/app/types/prisma-enums";
 import BookingForm from "@/features/booking/components/BookingForm";
 import { prisma } from "@/app/lib/prisma";
@@ -38,11 +40,11 @@ export default async function BookingPage({
   });
 
   if (!session) {
-    redirect("/?bookingError=session-not-found");
+    redirect(buildLoginUrl(BookingErrors.SessionNotFound));
   }
 
   if (session.status !== BookingSessionStatus.ACTIVE) {
-    redirect("/?bookingError=session-invalid");
+    redirect(buildLoginUrl(BookingErrors.SessionInvalid));
   }
 
   if (session.expiresAt < new Date()) {
@@ -55,7 +57,7 @@ export default async function BookingPage({
       },
     });
 
-    redirect("/?bookingError=session-expired");
+    redirect(buildLoginUrl(BookingErrors.SessionExpired));
   }
 
   const room = session.room;
@@ -196,7 +198,7 @@ export default async function BookingPage({
                   <span>{session.guestCount}</span>
                 </div>
                 <Link
-                  href={`/?checkInDate=${session.checkInDate.toISOString().split("T")[0]
+                  href={`/search?checkInDate=${session.checkInDate.toISOString().split("T")[0]
                     }&checkOutDate=${session.checkOutDate.toISOString().split("T")[0]
                     }&guestCount=${session.guestCount}`}
                   className="block mt-4 text-center border border-[#3a2418] text-[#3a2418] px-4 py-2 rounded-sm text-xs font-semibold uppercase tracking-widest hover:bg-[#f7f4ef]"

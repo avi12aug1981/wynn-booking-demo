@@ -23,6 +23,7 @@ import {
   generateBookingReference,
   generatePaymentTransactionId,
 } from "@/app/lib/utils/reference-number";
+import { sendReservationConfirmationEmail } from "@/features/booking/services/reservation-email-service";
 
 function validateBasicBookingRequest(request: CreateBookingRequest): string | null {
   if (!request.roomId) return Messages.Booking.RoomRequired;
@@ -235,7 +236,7 @@ export async function createBooking(request: CreateBookingRequest) {
             paymentStatus: PaymentStatus.PAID,
             paymentTransactionId,
             status: BookingStatus.CONFIRMED,
-            confirmationEmailSent: true,
+            confirmationEmailSent: false,
             bookingSource: ApplicationConstants.BookingSource,
             guests: {
               create:
@@ -276,6 +277,29 @@ export async function createBooking(request: CreateBookingRequest) {
       bookingType: booking.bookingType,
     });
 
+    let confirmationEmailSent = false;
+
+    try {
+      await sendReservationConfirmationEmail(booking);
+      confirmationEmailSent = true;
+
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { confirmationEmailSent: true },
+      });
+    } catch (emailError) {
+      logger.error(
+        OperationNames.SendReservationConfirmation,
+        LogEvents.ReservationEmailFailed,
+        {
+          referenceNumber: booking.referenceNumber,
+          to: booking.contactEmail,
+          error:
+            emailError instanceof Error ? emailError.message : "Unknown error",
+        }
+      );
+    }
+
     return {
       success: true,
       status: 201,
@@ -288,7 +312,7 @@ export async function createBooking(request: CreateBookingRequest) {
         totalPrice: Number(booking.totalPrice),
         paymentStatus: booking.paymentStatus,
         bookingStatus: booking.status,
-        confirmationEmailSent: booking.confirmationEmailSent,
+        confirmationEmailSent,
       },
     };
   } catch (error) {

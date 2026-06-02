@@ -1,3 +1,4 @@
+import DemoMemberReservationsLink from "@/features/reservations/components/DemoMemberReservationsLink";
 import SearchForm from "@/features/rooms/components/SearchForm";
 import RoomSearchResults from "@/features/rooms/components/RoomSearchResults";
 import SearchPageRefreshScript from "@/features/rooms/components/SearchPageRefreshScript";
@@ -95,17 +96,24 @@ export default async function RoomsSearchPage({
 
       <section className="bg-[#3a2418] text-white pb-20">
         <div className="max-w-6xl mx-auto px-6 py-8">
-          <p className="uppercase tracking-[0.35em] text-[#c9b38c] text-sm">
-            Wynn Las Vegas
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="uppercase tracking-[0.35em] text-[#c9b38c] text-sm">
+                Wynn Las Vegas
+              </p>
 
-          <h1 className="font-serif text-4xl mt-4">
-            Experience Luxury Accommodations
-          </h1>
+              <h1 className="font-serif text-4xl mt-4">
+                Experience Luxury Accommodations
+              </h1>
 
-          <p className="text-stone-200 mt-3 max-w-2xl">
-            Search available rooms, review premium amenities, and complete your reservation.
-          </p>
+              <p className="text-stone-200 mt-3 max-w-2xl">
+                Search available rooms, review premium amenities, and complete
+                your reservation.
+              </p>
+            </div>
+
+            <DemoMemberReservationsLink />
+          </div>
         </div>
       </section>
 

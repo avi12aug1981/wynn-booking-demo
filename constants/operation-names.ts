@@ -6,6 +6,7 @@ export const OperationNames = {
   GetRoomDetails: "GetRoomDetails",
 
   CreateBooking: "CreateBooking",
+  SendReservationConfirmation: "SendReservationConfirmation",
   GetBooking: "GetBooking",
   CancelBooking: "CancelBooking",
 

@@ -54,7 +54,7 @@ export default async function ConfirmationPage({
           </p>
 
           <Link
-            href="/"
+            href="/search"
             className="inline-block mt-6 bg-[#007a68] text-white px-6 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold"
           >
             Start New Search
@@ -291,7 +291,7 @@ export default async function ConfirmationPage({
               <PrintReservationButton />
 
                 <Link
-                  href="/"
+                  href="/search"
                   className="block text-center bg-[#007a68] hover:bg-[#006250] text-white px-5 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold"
                 >
                   New Search

@@ -5,6 +5,8 @@ export const LogEvents = {
   
     BookingCreated: "BOOKING_CREATED",
     BookingCancelled: "BOOKING_CANCELLED",
+    ReservationEmailSent: "RESERVATION_EMAIL_SENT",
+    ReservationEmailFailed: "RESERVATION_EMAIL_FAILED",
   
     BookingSessionCreated: "BOOKING_SESSION_CREATED",
     BookingSessionExpired: "BOOKING_SESSION_EXPIRED",
