@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import RoomCard from "./RoomCard";
 import type { RoomSearchResult } from "@/app/types/room";
+import { searchRoomsDotNet } from "@/lib/api/dotnet-booking-client";
 
 type RoomSearchResultsProps = {
   initialRooms: RoomSearchResult[];
@@ -12,14 +13,6 @@ type RoomSearchResultsProps = {
   petsAllowed?: string;
   nonSmoking?: string;
   minRating?: string;
-};
-
-type RoomsApiResponse = {
-  success?: boolean;
-  data?: {
-    rooms?: RoomSearchResult[];
-  };
-  rooms?: RoomSearchResult[];
 };
 
 export default function RoomSearchResults({
@@ -49,14 +42,17 @@ export default function RoomSearchResults({
     if (minRating) query.set("minRating", minRating);
 
     try {
-      const response = await fetch(`/api/rooms?${query.toString()}`, {
-        cache: "no-store",
+      const result = await searchRoomsDotNet({
+        checkInDate,
+        checkOutDate,
+        guestCount: Number(guestCount),
+        petsAllowed: petsAllowed === "true",
+        nonSmoking: nonSmoking === "true",
+        minRating: minRating ? Number(minRating) : undefined,
       });
 
-      if (response.ok) {
-        const data = (await response.json()) as RoomsApiResponse;
-
-        setRooms(data.data?.rooms ?? data.rooms ?? []);
+      if (result.ok) {
+        setRooms(result.rooms);
       }
     } finally {
       setIsRefreshing(false);

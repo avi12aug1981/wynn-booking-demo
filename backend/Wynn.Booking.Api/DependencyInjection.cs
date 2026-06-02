@@ -1,9 +1,11 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Wynn.Booking.Api.Authentication;
+using Wynn.Booking.Api.Http;
 using Wynn.Booking.Api.Configuration;
 using Wynn.Booking.Application.Abstractions.Auth;
 using Wynn.Booking.Application.Auth;
@@ -54,7 +56,11 @@ public static class DependencyInjection
 
         services.AddAuthorization();
 
-        services.AddControllers();
+        services.AddControllers()
+            .ConfigureApiBehaviorOptions(options =>
+            {
+                options.InvalidModelStateResponseFactory = ApiErrorResponses.FromModelState;
+            });
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {

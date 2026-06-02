@@ -1,6 +1,16 @@
 export const DemoUserStorageKeys = {
   userType: "wynnDemoUserType",
+  accessToken: "wynnMemberAccessToken",
+  memberProfile: "wynnMemberProfile",
 } as const;
+
+export type DemoMemberProfile = {
+  memberId: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  tier: string;
+};
 
 export type DemoUserType = "GUEST" | "MEMBER";
 
@@ -30,6 +40,12 @@ export const EMPTY_GUEST_DETAILS_DEFAULTS: DemoGuestDetailsDefaults = {
   country: "USA",
 };
 
+/** Demo member sign-in (login page + appsettings DemoAuth). */
+export const DEMO_MEMBER_CREDENTIALS = {
+  email: "demo.member@wynn.local",
+  password: "demo.member",
+} as const;
+
 export const DEMO_MEMBER_GUEST_DETAILS: DemoGuestDetailsDefaults = {
   firstName: "Avadesh",
   lastName: "Demo Member",
@@ -48,6 +64,7 @@ export function setDemoGuestSession() {
     return;
   }
 
+  clearMemberAuthStorage();
   sessionStorage.setItem(DemoUserStorageKeys.userType, "GUEST");
 }
 
@@ -57,6 +74,68 @@ export function setDemoMemberSession() {
   }
 
   sessionStorage.setItem(DemoUserStorageKeys.userType, "MEMBER");
+}
+
+export function setDemoMemberAuth(
+  profile: DemoMemberProfile,
+  accessToken: string
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  sessionStorage.setItem(DemoUserStorageKeys.userType, "MEMBER");
+  sessionStorage.setItem(DemoUserStorageKeys.accessToken, accessToken);
+  sessionStorage.setItem(
+    DemoUserStorageKeys.memberProfile,
+    JSON.stringify(profile)
+  );
+}
+
+function clearMemberAuthStorage() {
+  sessionStorage.removeItem(DemoUserStorageKeys.accessToken);
+  sessionStorage.removeItem(DemoUserStorageKeys.memberProfile);
+}
+
+export function getMemberAccessToken(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return sessionStorage.getItem(DemoUserStorageKeys.accessToken);
+}
+
+export function getMemberProfile(): DemoMemberProfile | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = sessionStorage.getItem(DemoUserStorageKeys.memberProfile);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as DemoMemberProfile;
+  } catch {
+    return null;
+  }
+}
+
+export function logoutDemoSession() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  sessionStorage.removeItem(DemoUserStorageKeys.userType);
+  clearMemberAuthStorage();
+}
+
+export function isMemberAuthenticated() {
+  return (
+    getDemoUserType() === "MEMBER" && Boolean(getMemberAccessToken())
+  );
 }
 
 export function getDemoUserType(): DemoUserType | null {
@@ -71,6 +150,15 @@ export function getDemoUserType(): DemoUserType | null {
   }
 
   return null;
+}
+
+export function isValidDemoMemberLogin(email: string, password: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  return (
+    normalizedEmail === DEMO_MEMBER_CREDENTIALS.email &&
+    password === DEMO_MEMBER_CREDENTIALS.password
+  );
 }
 
 export function getDemoGuestDetailsDefaults(): DemoGuestDetailsDefaults {

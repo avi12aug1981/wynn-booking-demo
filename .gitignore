@@ -57,3 +57,4 @@ CLAUDE.md
 
 # Local application logs
 logs/*.log
+backend/Wynn.Booking.Api/logs/

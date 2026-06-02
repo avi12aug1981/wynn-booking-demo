@@ -6,6 +6,7 @@ using Wynn.Booking.Application.Bookings.Dtos;
 using Wynn.Booking.Application.Features.Bookings.CancelBooking;
 using Wynn.Booking.Application.Features.Bookings.CreateBooking;
 using Wynn.Booking.Application.Features.Bookings.GetBooking;
+using Wynn.Booking.Application.Features.Bookings.GetMemberBookings;
 using Wynn.Booking.Application.Features.Bookings.ModifyBooking;
 using Wynn.Booking.Api.Authentication;
 
@@ -21,6 +22,15 @@ public sealed class BookingsController(ISender sender) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(command, cancellationToken);
+        return FromServiceResult(result);
+    }
+
+    /// <summary>List reservations for the authenticated member.</summary>
+    [Authorize(Roles = JwtClaimTypes.RoleMember)]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMyBookings(CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetMemberBookingsQuery(), cancellationToken);
         return FromServiceResult(result);
     }
 

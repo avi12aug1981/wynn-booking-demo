@@ -77,7 +77,7 @@ dotnet run
 **Demo member** (matches React `demo.member@wynn.local`):
 
 - Email: `demo.member@wynn.local`
-- Password: `DemoMember2026!`
+- Password: `demo.member`
 
 Use the token on protected routes:
 
@@ -88,12 +88,31 @@ Authorization: Bearer <accessToken>
 | Method | Path | Auth |
 |--------|------|------|
 | POST | `/api/booking-sessions` | `x-api-key` (BFF / server) |
-| POST | `/api/bookings` | Optional JWT (sets `memberId` when logged in) |
+| POST | `/api/bookings` | **Requires `bookingSessionToken`**; optional JWT for member |
+| GET | `/api/bookings/me` | JWT **Member** (reservation history) |
 | GET | `/api/bookings/{ref}` | None (confirmation page) |
 | PATCH | `/api/bookings/{ref}` | JWT **Member** |
 | POST | `/api/bookings/{ref}/cancel` | JWT **Member** |
 
 Configure `Jwt:SecretKey` (min 32 chars) in production via environment variable `Jwt__SecretKey`.
+
+## Logs (file)
+
+When the API runs, Serilog writes to:
+
+`backend/Wynn.Booking.Api/logs/wynn-booking-api-YYYYMMDD.log`
+
+On startup the API logs the **full absolute path** to this file.
+
+Search using the **`traceId` from the JSON response** (same value as `ApiTraceId` in logs):
+
+```bash
+grep "ApiTraceId=YOUR_TRACE_ID_FROM_RESPONSE" backend/Wynn.Booking.Api/logs/wynn-booking-api-*.log
+```
+
+Every request also writes a completion line: `HTTP POST /api/Bookings -> 400 ApiTraceId=...`
+
+Business failures (e.g. session mismatch) log: `API request failed. ApiTraceId=...`
 
 ## API endpoints (Next.js parity)
 

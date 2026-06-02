@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import AppTopBar from "@/components/ui/organisms/AppTopBar";
 import Footer from "@/components/ui/organisms/Footer";
 
 const geistSans = Geist({
@@ -29,6 +30,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <AppTopBar />
         {children}
         <Footer />
       </body>

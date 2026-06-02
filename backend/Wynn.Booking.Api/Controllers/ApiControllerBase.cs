@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 using Wynn.Booking.Application.Common;
 using Wynn.Booking.Api.Extensions;
 
@@ -16,6 +17,12 @@ public abstract class ApiControllerBase : ControllerBase
         {
             return StatusCode(result.StatusCode, ApiResponse<T>.Ok(result.Data!, traceId: TraceId));
         }
+
+        Log.Warning(
+            "API request failed. ApiTraceId={ApiTraceId} StatusCode={StatusCode} Message={Message}",
+            TraceId,
+            result.StatusCode,
+            result.Message ?? "Request failed.");
 
         return StatusCode(
             result.StatusCode,

@@ -2,7 +2,7 @@ import DemoMemberReservationsLink from "@/features/reservations/components/DemoM
 import SearchForm from "@/features/rooms/components/SearchForm";
 import RoomSearchResults from "@/features/rooms/components/RoomSearchResults";
 import SearchPageRefreshScript from "@/features/rooms/components/SearchPageRefreshScript";
-import { searchAvailableRooms } from "@/features/rooms/services/room-search-service";
+import { searchRoomsDotNet } from "@/lib/api/dotnet-booking-client";
 import type { RoomSearchResult } from "@/app/types/room";
 import { Messages } from "@/app/constants/messages";
 import { BookingErrors } from "@/app/constants/booking-errors";
@@ -38,7 +38,7 @@ async function getRooms(
     return [];
   }
 
-  return searchAvailableRooms({
+  const result = await searchRoomsDotNet({
     checkInDate,
     checkOutDate,
     guestCount: parsedGuestCount,
@@ -46,6 +46,8 @@ async function getRooms(
     nonSmoking: nonSmoking === "true",
     minRating: minRating ? Number(minRating) : undefined,
   });
+
+  return result.rooms;
 }
 
 export default async function RoomsSearchPage({

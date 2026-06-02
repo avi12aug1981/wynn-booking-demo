@@ -90,6 +90,8 @@ export const Messages = {
       "Your reservation session is no longer active. Choose how to continue.",
     SessionExpired:
       "Your reservation session has expired. Choose how to continue.",
+    InvalidCredentials:
+      "Invalid email or password. Use the demo member credentials shown below.",
   },
 
   SearchPage: {

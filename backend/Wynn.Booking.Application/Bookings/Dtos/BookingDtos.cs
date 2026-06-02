@@ -63,6 +63,20 @@ public sealed record ModifyBookingRequestDto(
     string? SpecialRequests,
     string? ContactEmail);
 
+public sealed record MemberBookingSummaryDto(
+    string ReferenceNumber,
+    string RoomName,
+    DateTime CheckInDate,
+    DateTime CheckOutDate,
+    int AdultCount,
+    int ChildCount,
+    int InfantCount,
+    BookingStatus Status,
+    decimal TotalPrice);
+
+public sealed record MemberBookingsResponseDto(
+    IReadOnlyList<MemberBookingSummaryDto> Bookings);
+
 public sealed record ModifyBookingResponseDto(
     string ReferenceNumber,
     string RoomName,

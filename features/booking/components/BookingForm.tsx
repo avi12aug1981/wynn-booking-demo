@@ -11,6 +11,7 @@ import { Messages } from "@/app/constants/messages";
 import type { BookingType } from "@/app/types/prisma-enums";
 import { markSearchResultsStale } from "@/app/constants/search-storage";
 import AppButton from "@/components/ui/atoms/AppButton";
+import { createBookingDotNet } from "@/lib/api/dotnet-booking-client";
 
 const ZIP_CODE_PATTERN = /^\d{5,10}$/;
 const PHONE_NUMBER_PATTERN = /^\d{10,15}$/;
@@ -209,24 +210,16 @@ export default function BookingForm({
       ],
     };
 
-    const response = await fetch("/api/bookings", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const { response, envelope } = await createBookingDotNet(payload);
 
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      setErrorMessage(result.message || "Unable to complete booking.");
+    if (!response.ok || !envelope.success || !envelope.data?.referenceNumber) {
+      setErrorMessage(envelope.message || "Unable to complete booking.");
       setIsSubmitting(false);
       return;
     }
 
     markSearchResultsStale();
-    window.location.replace(`/confirmation/${result.data.referenceNumber}`);
+    window.location.replace(`/confirmation/${envelope.data.referenceNumber}`);
   }
 
   if (!isClientReady) {

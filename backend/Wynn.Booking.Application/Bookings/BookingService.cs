@@ -54,41 +54,43 @@ public sealed class BookingService(
             return ServiceResult<CreateBookingResponseDto>.Fail("Maximum of 2 pets allowed.", 400);
         }
 
-        int? bookingSessionId = null;
-
-        if (!string.IsNullOrWhiteSpace(request.BookingSessionToken))
+        if (string.IsNullOrWhiteSpace(request.BookingSessionToken))
         {
-            var session = await bookingSessionRepository.GetByTokenWithRoomAsync(
-                request.BookingSessionToken,
-                cancellationToken);
-
-            if (session is null || session.Status != BookingSessionStatus.Active)
-            {
-                return ServiceResult<CreateBookingResponseDto>.Fail(
-                    "Booking session is invalid or has expired.",
-                    409);
-            }
-
-            if (session.ExpiresAt <= DateTime.UtcNow)
-            {
-                await bookingSessionRepository.ExpireAsync(session.Id, cancellationToken);
-                return ServiceResult<CreateBookingResponseDto>.Fail(
-                    "Booking session is invalid or has expired.",
-                    409);
-            }
-
-            if (session.RoomId != room.Id ||
-                session.GuestCount != totalGuestCount ||
-                session.CheckInDate != checkIn ||
-                session.CheckOutDate != checkOut)
-            {
-                return ServiceResult<CreateBookingResponseDto>.Fail(
-                    "Booking session does not match the reservation details.",
-                    400);
-            }
-
-            bookingSessionId = session.Id;
+            return ServiceResult<CreateBookingResponseDto>.Fail(
+                "Booking session token is required. Start checkout via POST /api/booking-sessions.",
+                400);
         }
+
+        var session = await bookingSessionRepository.GetByTokenWithRoomAsync(
+            request.BookingSessionToken,
+            cancellationToken);
+
+        if (session is null || session.Status != BookingSessionStatus.Active)
+        {
+            return ServiceResult<CreateBookingResponseDto>.Fail(
+                "Booking session is invalid or has expired.",
+                409);
+        }
+
+        if (session.ExpiresAt <= DateTime.UtcNow)
+        {
+            await bookingSessionRepository.ExpireAsync(session.Id, cancellationToken);
+            return ServiceResult<CreateBookingResponseDto>.Fail(
+                "Booking session is invalid or has expired.",
+                409);
+        }
+
+        if (session.RoomId != room.Id ||
+            session.GuestCount != totalGuestCount ||
+            session.CheckInDate != checkIn ||
+            session.CheckOutDate != checkOut)
+        {
+            return ServiceResult<CreateBookingResponseDto>.Fail(
+                "Booking session does not match the reservation details.",
+                400);
+        }
+
+        var bookingSessionId = session.Id;
 
         var availability = await roomSearchService.CheckAvailabilityAsync(
             room.Id,
@@ -201,6 +203,33 @@ public sealed class BookingService(
         }
     }
 
+    public async Task<ServiceResult<MemberBookingsResponseDto>> ListByCurrentMemberAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (!currentUser.IsAuthenticated || !currentUser.MemberId.HasValue)
+        {
+            return ServiceResult<MemberBookingsResponseDto>.Fail("Authentication is required.", 401);
+        }
+
+        var bookings = await bookingRepository.FindByMemberIdAsync(
+            currentUser.MemberId.Value,
+            cancellationToken);
+
+        var summaries = bookings.Select(booking => new MemberBookingSummaryDto(
+            booking.ReferenceNumber,
+            booking.Room.Name,
+            booking.CheckInDate,
+            booking.CheckOutDate,
+            booking.AdultCount,
+            booking.ChildCount,
+            booking.InfantCount,
+            booking.Status,
+            booking.TotalPrice)).ToList();
+
+        return ServiceResult<MemberBookingsResponseDto>.Ok(
+            new MemberBookingsResponseDto(summaries));
+    }
+
     public async Task<ServiceResult<object>> GetByReferenceNumberAsync(
         string referenceNumber,
         CancellationToken cancellationToken = default)
@@ -222,6 +251,9 @@ public sealed class BookingService(
             booking.FirstName,
             booking.LastName,
             booking.ContactEmail,
+            booking.AdultCount,
+            booking.ChildCount,
+            booking.InfantCount,
             booking.CheckInDate,
             booking.CheckOutDate,
             booking.NumberOfNights,
@@ -229,6 +261,7 @@ public sealed class BookingService(
             booking.Status,
             booking.PaymentStatus,
             booking.ConfirmationEmailSent,
+            booking.SpecialRequests,
             guests = booking.Guests.OrderBy(g => g.Sequence).Select(g => new
             {
                 g.Sequence,

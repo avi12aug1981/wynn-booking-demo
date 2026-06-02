@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Hand } from "lucide-react";
 import { Messages } from "@/app/constants/messages";
-import { SecurityConstants } from "@/constants";
+import { createBookingSessionDotNet } from "@/lib/api/dotnet-booking-client";
 import AppButton from "@/components/ui/atoms/AppButton";
 
 type BookNowButtonProps = {
@@ -22,13 +22,6 @@ type ReadyBookNowButtonProps = {
   onUnavailable?: (message: string) => void;
 };
 
-function getClientApiKey() {
-  return (
-    process.env.NEXT_PUBLIC_INTERNAL_API_KEY ??
-    SecurityConstants.DefaultInternalApiKey
-  );
-}
-
 function ReadyBookNowButton({
   roomId,
   checkInDate,
@@ -44,37 +37,23 @@ function ReadyBookNowButton({
     setIsChecking(true);
 
     try {
-      const response = await fetch("/api/booking-sessions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          [SecurityConstants.ApiKeyHeaderName]: getClientApiKey(),
-        },
-        body: JSON.stringify({
-          roomId,
-          checkInDate,
-          checkOutDate,
-          guestCount: Number(guestCount),
-        }),
-        cache: "no-store",
+      const { response, envelope } = await createBookingSessionDotNet({
+        roomId,
+        checkInDate,
+        checkOutDate,
+        guestCount: Number(guestCount),
       });
 
-      const result = (await response.json()) as {
-        success?: boolean;
-        message?: string;
-        data?: { redirectUrl?: string };
-      };
-
-      if (!response.ok || !result.success || !result.data?.redirectUrl) {
+      if (!response.ok || !envelope.success || !envelope.data?.redirectUrl) {
         const message =
-          result.message ?? Messages.Booking.RoomNoLongerAvailable;
+          envelope.message ?? Messages.Booking.RoomNoLongerAvailable;
 
         setErrorMessage(message);
         onUnavailable?.(message);
         return;
       }
 
-      window.location.href = result.data.redirectUrl;
+      window.location.href = envelope.data.redirectUrl;
     } catch {
       const message = Messages.Common.UnexpectedError;
       setErrorMessage(message);

@@ -7,13 +7,21 @@ using Wynn.Booking.Application;
 using Wynn.Booking.Infrastructure;
 using Wynn.Booking.Infrastructure.Persistence;
 
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateLogger();
-
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+
+    var logFilePath = Path.Combine(builder.Environment.ContentRootPath, "logs", "wynn-booking-api-.log");
+
+    Log.Logger = new LoggerConfiguration()
+        .Enrich.FromLogContext()
+        .WriteTo.File(
+            logFilePath,
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 14,
+            flushToDiskInterval: TimeSpan.FromSeconds(1),
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] TraceId={TraceId} {Message:lj}{NewLine}{Exception}")
+        .CreateLogger();
 
     builder.Host.UseSerilog((context, services, configuration) =>
         configuration
@@ -21,7 +29,12 @@ try
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Application", "Wynn.Booking.Api")
-            .WriteTo.Console());
+            .WriteTo.File(
+                logFilePath,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 14,
+                flushToDiskInterval: TimeSpan.FromSeconds(1),
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] TraceId={TraceId} {Message:lj}{NewLine}{Exception}"));
 
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
@@ -31,6 +44,8 @@ try
         .AddDbContextCheck<BookingDbContext>("sqlserver", tags: ["ready", "db"]);
 
     var app = builder.Build();
+
+    Log.Information("Serilog file log path: {LogFilePath}", logFilePath);
 
     if (app.Environment.IsDevelopment())
     {
@@ -49,6 +64,7 @@ try
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseMiddleware<ExceptionHandlingMiddleware>();
     app.UseMiddleware<ApiKeyMiddleware>();
+    app.UseMiddleware<RequestCompletionLoggingMiddleware>();
 
     app.UseAuthentication();
     app.UseAuthorization();

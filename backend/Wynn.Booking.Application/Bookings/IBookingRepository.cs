@@ -23,6 +23,10 @@ public interface IBookingRepository
         string referenceNumber,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<BookingEntity>> FindByMemberIdAsync(
+        int memberId,
+        CancellationToken cancellationToken = default);
+
     Task<BookingEntity> CreateBookingAsync(
         BookingEntity booking,
         int? bookingSessionId,

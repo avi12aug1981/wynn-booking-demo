@@ -37,7 +37,7 @@ public sealed class ApiEndpointTests(WynnBookingApiFactory factory) : IClassFixt
     {
         var response = await _client.PostAsJsonAsync(
             "/api/auth/login",
-            new { email = "demo.member@wynn.local", password = "DemoMember2026!" });
+            new { email = "demo.member@wynn.local", password = "demo.member" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -55,6 +55,64 @@ public sealed class ApiEndpointTests(WynnBookingApiFactory factory) : IClassFixt
             new { email = "demo.member@wynn.local", password = "wrong-password" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateBooking_WithInvalidJson_ReturnsApiEnvelopeWithShortTraceId()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/Bookings")
+        {
+            Content = new StringContent(
+                """{ "bookingSessionToken": 'bad', "roomId": 1 }""",
+                System.Text.Encoding.UTF8,
+                "application/json"),
+        };
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("\"type\":", body);
+        Assert.Contains("\"success\":false", body.Replace(" ", ""));
+
+        var json = await response.Content.ReadFromJsonAsync<ApiEnvelope<object>>();
+        Assert.NotNull(json);
+        Assert.False(json!.Success);
+        Assert.False(string.IsNullOrWhiteSpace(json.TraceId));
+        Assert.DoesNotContain('-', json.TraceId!);
+    }
+
+    [Fact]
+    public async Task CreateBooking_WithoutSessionToken_ReturnsBadRequest()
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/Bookings",
+            new
+            {
+                bookingSessionToken = (string?)null,
+                roomId = 1,
+                bookingType = 0,
+                firstName = "Jane",
+                lastName = "Guest",
+                gender = 1,
+                contactEmail = "jane@example.com",
+                adultCount = 2,
+                checkInDate = "2026-10-01",
+                checkOutDate = "2026-10-03",
+                addressLine1 = "123 Main St",
+                city = "Las Vegas",
+                state = "NV",
+                zipCode = "89109",
+                country = "USA",
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var json = await response.Content.ReadFromJsonAsync<ApiEnvelope<object>>();
+        Assert.NotNull(json);
+        Assert.False(json!.Success);
+        Assert.False(string.IsNullOrWhiteSpace(json.TraceId));
     }
 
     [Fact]
@@ -93,6 +151,7 @@ public sealed class ApiEndpointTests(WynnBookingApiFactory factory) : IClassFixt
     {
         public bool Success { get; init; }
         public T? Data { get; init; }
+        public string? TraceId { get; init; }
     }
 
     private sealed class RoomSearchData

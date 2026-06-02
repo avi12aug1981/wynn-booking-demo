@@ -2,23 +2,22 @@ import Image from "next/image";
 import Link from "next/link";
 import PrintReservationButton from "@/features/confirmation/components/PrintReservationButton";
 import type { PageRouteContext } from "@/features/app-router/route-types";
+import {
+  getBookingByReferenceDotNet,
+  mapDotNetBookingForConfirmation,
+} from "@/lib/api/dotnet-booking-client";
 
 type ConfirmationPageProps = PageRouteContext;
 
 async function getBooking(referenceNumber: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  const { response, envelope } =
+    await getBookingByReferenceDotNet(referenceNumber);
 
-  const response = await fetch(`${baseUrl}/api/bookings/${referenceNumber}`, {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  if (!response.ok || !envelope.success || !envelope.data) {
     return null;
   }
 
-  const data = await response.json();
-
-  return data.data;
+  return mapDotNetBookingForConfirmation(envelope.data);
 }
 
 function formatDate(value: string) {

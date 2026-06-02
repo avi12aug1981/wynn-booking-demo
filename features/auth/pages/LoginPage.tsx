@@ -1,12 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
 import { BookingErrors } from "@/app/constants/booking-errors";
 import { Messages } from "@/app/constants/messages";
 import {
+  isValidDemoMemberLogin,
   setDemoGuestSession,
-  setDemoMemberSession,
+  setDemoMemberAuth,
 } from "@/app/constants/demo-user";
+import { loginDotNet } from "@/lib/api/dotnet-booking-client";
 import { AppRoutes } from "@/app/constants/routes";
 import AppButton from "@/components/ui/atoms/AppButton";
 
@@ -37,14 +40,59 @@ export default function LoginPage({ searchParams = {} }: LoginPageProps) {
     getSingleQueryValue(searchParams.bookingError)
   );
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   function continueAsGuest() {
     setDemoGuestSession();
     router.push(AppRoutes.search);
   }
 
-  function continueAsDemoMember() {
-    setDemoMemberSession();
-    router.push(AppRoutes.search);
+  async function handleMemberLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoginError(null);
+    setIsSubmitting(true);
+
+    if (!isValidDemoMemberLogin(email, password)) {
+      setLoginError(Messages.LoginPage.InvalidCredentials);
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const { response, envelope } = await loginDotNet(
+        email.trim(),
+        password
+      );
+
+      if (!response.ok || !envelope.success || !envelope.data?.accessToken) {
+        setLoginError(
+          envelope.message ?? Messages.LoginPage.InvalidCredentials
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      const user = envelope.data.user;
+
+      setDemoMemberAuth(
+        {
+          memberId: user.memberId,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          tier: user.tier,
+        },
+        envelope.data.accessToken
+      );
+
+      router.push(AppRoutes.search);
+    } catch {
+      setLoginError(Messages.LoginPage.InvalidCredentials);
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -60,8 +108,8 @@ export default function LoginPage({ searchParams = {} }: LoginPageProps) {
           </h1>
 
           <p className="text-stone-200 mt-3 max-w-2xl">
-            Continue as a guest or use a demo member profile to preview a
-            member-based reservation journey.
+            Continue as a guest or sign in with the demo member account to
+            preview a member-based reservation journey.
           </p>
         </div>
       </section>
@@ -91,23 +139,64 @@ export default function LoginPage({ searchParams = {} }: LoginPageProps) {
 
           <div className="bg-white border rounded-sm shadow-md p-6 space-y-4">
             <h2 className="font-serif text-3xl text-[#3a2418]">
-              Demo Member
+              Member Sign In
             </h2>
 
             <p className="text-gray-600">
-              Preview a member booking experience with a controlled demo
-              profile.
+              Sign in with your member email and password.
             </p>
 
-            <div className="rounded-sm bg-[#faf8f4] border p-4 text-sm">
-              <p className="font-semibold">Avadesh Demo Member</p>
-              <p className="text-gray-600">Gold Member</p>
-              <p className="text-gray-600">demo.member@wynn.local</p>
-            </div>
+            <form onSubmit={handleMemberLogin} className="space-y-4">
+              {loginError && (
+                <div className="rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {loginError}
+                </div>
+              )}
 
-            <AppButton type="button" fullWidth onClick={continueAsDemoMember}>
-              Continue as Demo Member
-            </AppButton>
+              <div>
+                <label
+                  htmlFor="member-email"
+                  className="block text-xs font-semibold uppercase tracking-widest text-[#3a2418] mb-2"
+                >
+                  Email
+                </label>
+                <input
+                  id="member-email"
+                  name="email"
+                  type="email"
+                  autoComplete="username"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="Email address"
+                  className="w-full border border-stone-300 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8c6b43]"
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="member-password"
+                  className="block text-xs font-semibold uppercase tracking-widest text-[#3a2418] mb-2"
+                >
+                  Password
+                </label>
+                <input
+                  id="member-password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Enter password"
+                  className="w-full border border-stone-300 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8c6b43]"
+                  required
+                />
+              </div>
+
+              <AppButton type="submit" fullWidth disabled={isSubmitting}>
+                {isSubmitting ? "Signing In…" : "Sign In"}
+              </AppButton>
+            </form>
           </div>
         </div>
       </section>

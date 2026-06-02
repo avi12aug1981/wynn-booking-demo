@@ -9,6 +9,10 @@ public sealed class CreateBookingCommandValidator : AbstractValidator<CreateBook
 {
     public CreateBookingCommandValidator()
     {
+        RuleFor(x => x.BookingSessionToken)
+            .NotEmpty()
+            .WithMessage("Booking session token is required. Start checkout via POST /api/booking-sessions.");
+
         RuleFor(x => x.RoomId).GreaterThan(0);
         RuleFor(x => x.FirstName).NotEmpty().Must(ValidationRules.IsSafeText);
         RuleFor(x => x.LastName).NotEmpty().Must(ValidationRules.IsSafeText);

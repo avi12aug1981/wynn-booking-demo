@@ -13,10 +13,12 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next)
             correlationId = Guid.NewGuid().ToString("N");
         }
 
+        context.Items[HttpContextExtensions.TraceIdItemKey] = correlationId;
         context.Response.Headers[HttpContextExtensions.CorrelationHeaderName] = correlationId;
         context.TraceIdentifier = correlationId;
 
         using (Serilog.Context.LogContext.PushProperty("CorrelationId", correlationId))
+        using (Serilog.Context.LogContext.PushProperty("TraceId", correlationId))
         {
             await next(context);
         }

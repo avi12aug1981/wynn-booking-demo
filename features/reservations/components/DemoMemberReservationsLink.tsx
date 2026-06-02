@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getDemoUserType } from "@/app/constants/demo-user";
+import { isMemberAuthenticated } from "@/app/constants/demo-user";
 import { AppRoutes } from "@/app/constants/routes";
 
 export default function DemoMemberReservationsLink() {
   const [isDemoMember, setIsDemoMember] = useState(false);
 
   useEffect(() => {
-    setIsDemoMember(getDemoUserType() === "MEMBER");
+    setIsDemoMember(isMemberAuthenticated());
   }, []);
 
   if (!isDemoMember) {

@@ -51,83 +51,113 @@ public sealed class BookingRepository(
             .Include(booking => booking.Guests)
             .FirstOrDefaultAsync(booking => booking.ReferenceNumber == referenceNumber, cancellationToken);
 
-    public async Task<BookingEntity> CreateBookingAsync(
+    public async Task<IReadOnlyList<BookingEntity>> FindByMemberIdAsync(
+        int memberId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.Bookings
+            .AsNoTracking()
+            .Include(booking => booking.Room)
+            .Where(booking => booking.MemberId == memberId)
+            .OrderByDescending(booking => booking.CheckInDate)
+            .ToListAsync(cancellationToken);
+
+    public Task<BookingEntity> CreateBookingAsync(
         BookingEntity booking,
         int? bookingSessionId,
-        CancellationToken cancellationToken = default)
-    {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable,
+        CancellationToken cancellationToken = default) =>
+        ExecuteInSerializableTransactionAsync(
+            async ct =>
+            {
+                if (await HasOverlappingConfirmedBookingAsync(
+                        booking.RoomId,
+                        booking.CheckInDate,
+                        booking.CheckOutDate,
+                        excludeBookingId: null,
+                        ct))
+                {
+                    throw new ConflictException("This room is no longer available for the selected dates.");
+                }
+
+                dbContext.Bookings.Add(booking);
+                await dbContext.SaveChangesAsync(ct);
+
+                if (bookingSessionId.HasValue)
+                {
+                    await bookingSessionRepository.MarkConsumedAsync(bookingSessionId.Value, ct);
+                }
+
+                return booking;
+            },
             cancellationToken);
 
-        if (await HasOverlappingConfirmedBookingAsync(
-                booking.RoomId,
-                booking.CheckInDate,
-                booking.CheckOutDate,
-                excludeBookingId: null,
-                cancellationToken))
-        {
-            throw new ConflictException("This room is no longer available for the selected dates.");
-        }
-
-        dbContext.Bookings.Add(booking);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        if (bookingSessionId.HasValue)
-        {
-            await bookingSessionRepository.MarkConsumedAsync(bookingSessionId.Value, cancellationToken);
-        }
-
-        await transaction.CommitAsync(cancellationToken);
-        return booking;
-    }
-
-    public async Task<BookingEntity> CancelByReferenceNumberAsync(
+    public Task<BookingEntity> CancelByReferenceNumberAsync(
         string referenceNumber,
         string? cancellationReason,
-        CancellationToken cancellationToken = default)
-    {
-        var booking = await dbContext.Bookings
-            .FirstAsync(x => x.ReferenceNumber == referenceNumber, cancellationToken);
+        CancellationToken cancellationToken = default) =>
+        ExecuteInSerializableTransactionAsync(
+            async ct =>
+            {
+                var booking = await dbContext.Bookings
+                    .FirstAsync(x => x.ReferenceNumber == referenceNumber, ct);
 
-        booking.Status = BookingStatus.Cancelled;
-        booking.PaymentStatus = PaymentStatus.Refunded;
-        booking.UpdatedAt = DateTime.UtcNow;
+                booking.Status = BookingStatus.Cancelled;
+                booking.PaymentStatus = PaymentStatus.Refunded;
+                booking.UpdatedAt = DateTime.UtcNow;
 
-        if (!string.IsNullOrWhiteSpace(cancellationReason))
-        {
-            var note = $"[Cancelled] {cancellationReason.Trim()}";
-            booking.SpecialRequests = string.IsNullOrWhiteSpace(booking.SpecialRequests)
-                ? note
-                : $"{booking.SpecialRequests}\n{note}";
-        }
+                if (!string.IsNullOrWhiteSpace(cancellationReason))
+                {
+                    var note = $"[Cancelled] {cancellationReason.Trim()}";
+                    booking.SpecialRequests = string.IsNullOrWhiteSpace(booking.SpecialRequests)
+                        ? note
+                        : $"{booking.SpecialRequests}\n{note}";
+                }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return booking;
-    }
-
-    public async Task<BookingEntity> ModifyBookingAsync(
-        BookingEntity booking,
-        CancellationToken cancellationToken = default)
-    {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable,
+                await dbContext.SaveChangesAsync(ct);
+                return booking;
+            },
             cancellationToken);
 
-        if (await HasOverlappingConfirmedBookingAsync(
-                booking.RoomId,
-                booking.CheckInDate,
-                booking.CheckOutDate,
-                excludeBookingId: booking.Id,
-                cancellationToken))
-        {
-            throw new ConflictException(
-                "This room is not available for the requested modification dates.");
-        }
+    public Task<BookingEntity> ModifyBookingAsync(
+        BookingEntity booking,
+        CancellationToken cancellationToken = default) =>
+        ExecuteInSerializableTransactionAsync(
+            async ct =>
+            {
+                if (await HasOverlappingConfirmedBookingAsync(
+                        booking.RoomId,
+                        booking.CheckInDate,
+                        booking.CheckOutDate,
+                        excludeBookingId: booking.Id,
+                        ct))
+                {
+                    throw new ConflictException(
+                        "This room is not available for the requested modification dates.");
+                }
 
-        booking.UpdatedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        return booking;
+                booking.UpdatedAt = DateTime.UtcNow;
+                await dbContext.SaveChangesAsync(ct);
+                return booking;
+            },
+            cancellationToken);
+
+    /// <summary>
+    /// Wraps manual transactions so they work with SQL Server retry execution strategy.
+    /// </summary>
+    private Task<T> ExecuteInSerializableTransactionAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        CancellationToken cancellationToken)
+    {
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+
+        return strategy.ExecuteAsync(async ct =>
+        {
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable,
+                ct);
+
+            var result = await operation(ct);
+            await transaction.CommitAsync(ct);
+            return result;
+        }, cancellationToken);
     }
 }
