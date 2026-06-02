@@ -33,6 +33,13 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# .NET build output and local secrets
+**/bin/
+**/obj/
+backend/Wynn.Booking.Api/appsettings.Development.json
+backend/publish/
+backend/deploy.zip
+
 # vercel
 .vercel
 
@@ -43,7 +50,8 @@ next-env.d.ts
 /app/generated/prisma
 
 dev.db
-prisma/dev.dbAGENTS.md
+prisma/dev.db
+
 CLAUDE.md
 .vscode/
 
