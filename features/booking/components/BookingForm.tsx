@@ -126,7 +126,10 @@ export default function BookingForm({
           </Link>
         </div>
       )}
-
+      <input type="hidden" name="checkInDate" value={defaultCheckInDate} />
+      <input type="hidden" name="checkOutDate" value={defaultCheckOutDate} />
+      <input type="hidden" name="adultCount" value={confirmedGuestCount} />
+      <input type="hidden" name="petCount" value="0" />
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="space-y-1">
           <span className="text-sm font-medium">First Name</span>
