@@ -68,6 +68,33 @@ dotnet run
 - Health: http://localhost:5116/api/health
 - Room search: `GET /api/rooms?checkInDate=2026-06-01&checkOutDate=2026-06-03&guestCount=2`
 
+## Authentication (JWT)
+
+| Method | Path | Auth |
+|--------|------|------|
+| POST | `/api/auth/login` | None — returns JWT |
+
+**Demo member** (matches React `demo.member@wynn.local`):
+
+- Email: `demo.member@wynn.local`
+- Password: `DemoMember2026!`
+
+Use the token on protected routes:
+
+```http
+Authorization: Bearer <accessToken>
+```
+
+| Method | Path | Auth |
+|--------|------|------|
+| POST | `/api/booking-sessions` | `x-api-key` (BFF / server) |
+| POST | `/api/bookings` | Optional JWT (sets `memberId` when logged in) |
+| GET | `/api/bookings/{ref}` | None (confirmation page) |
+| PATCH | `/api/bookings/{ref}` | JWT **Member** |
+| POST | `/api/bookings/{ref}/cancel` | JWT **Member** |
+
+Configure `Jwt:SecretKey` (min 32 chars) in production via environment variable `Jwt__SecretKey`.
+
 ## API endpoints (Next.js parity)
 
 | Method | Path | Description |

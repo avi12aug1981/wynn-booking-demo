@@ -93,6 +93,15 @@ dotnet test
 
 Integration tests use `WebApplicationFactory` against Development config (requires reachable SQL from `appsettings.Development.json`).
 
+## JWT authentication
+
+- **Login:** `POST /api/auth/login` with `{ "email", "password" }` → `{ accessToken, expiresAtUtc, user }`.
+- **Bearer** scheme on `Authorization` header for member-only writes.
+- **Demo users** in `DemoAuth:Members` (config); production should use Entra ID / identity provider instead.
+- **Ownership:** cancel/modify verify JWT `member_id` matches `Booking.MemberId`, or email matches guest bookings.
+- **Public:** room search, availability, create booking, get booking by reference.
+- **API key** (unchanged): `POST /api/booking-sessions` for Next.js BFF.
+
 ## Cancel and modify reservations
 
 ### Cancel — `POST /api/bookings/{referenceNumber}/cancel`

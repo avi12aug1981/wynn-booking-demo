@@ -1,6 +1,13 @@
+using System.Text;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Wynn.Booking.Api.Authentication;
 using Wynn.Booking.Api.Configuration;
+using Wynn.Booking.Application.Abstractions.Auth;
+using Wynn.Booking.Application.Auth;
+using Wynn.Booking.Application.Common;
 
 namespace Wynn.Booking.Api;
 
@@ -12,6 +19,40 @@ public static class DependencyInjection
     {
         services.Configure<ApiSecurityOptions>(configuration.GetSection(ApiSecurityOptions.SectionName));
         services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.SectionName));
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<DemoAuthOptions>(configuration.GetSection(DemoAuthOptions.SectionName));
+
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddSingleton<IDemoMemberCredentialStore, DemoMemberCredentialStore>();
+
+        var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+            ?? new JwtOptions();
+
+        if (string.IsNullOrWhiteSpace(jwtOptions.SecretKey) || jwtOptions.SecretKey.Length < 32)
+        {
+            throw new InvalidOperationException(
+                "Jwt:SecretKey must be at least 32 characters. Set it in appsettings or Jwt__SecretKey environment variable.");
+        }
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
+                    ClockSkew = TimeSpan.FromMinutes(1),
+                };
+            });
+
+        services.AddAuthorization();
 
         services.AddControllers();
         services.AddEndpointsApiExplorer();
@@ -33,8 +74,29 @@ public static class DependencyInjection
                 Type = SecuritySchemeType.ApiKey,
             });
 
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "JWT Bearer token from POST /api/auth/login. Example: Bearer {token}",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.Http,
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
+            });
+
             options.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer",
+                        },
+                    },
+                    Array.Empty<string>()
+                },
                 {
                     new OpenApiSecurityScheme
                     {

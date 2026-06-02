@@ -17,6 +17,7 @@ public sealed class BookingService(
     IRoomRepository roomRepository,
     IRoomSearchService roomSearchService,
     IReservationConfirmationNotifier confirmationNotifier,
+    ICurrentUserContext currentUser,
     ILogger<BookingService> logger) : IBookingService
 {
     public async Task<ServiceResult<CreateBookingResponseDto>> CreateAsync(
@@ -109,13 +110,16 @@ public sealed class BookingService(
         var totalPrice = decimal.Round(pricePerNight * numberOfNights - discountAmount + taxAmount, 2);
         var now = DateTime.UtcNow;
 
+        var memberId = request.MemberId ?? currentUser.MemberId;
+        var bookingType = memberId.HasValue ? BookingType.Member : request.BookingType;
+
         var booking = new BookingEntity
         {
             ReferenceNumber = ReferenceGenerator.GenerateBookingReference(),
             RoomId = room.Id,
             BookingSessionId = bookingSessionId,
-            MemberId = request.MemberId,
-            BookingType = request.BookingType,
+            MemberId = memberId,
+            BookingType = bookingType,
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
             Gender = request.Gender,
@@ -247,6 +251,12 @@ public sealed class BookingService(
             return ServiceResult<CancelBookingResponseDto>.Fail("Booking not found.", 404);
         }
 
+        var accessDenied = BookingAuthorization.GetAccessDeniedMessage(existing, currentUser);
+        if (accessDenied is not null)
+        {
+            return ServiceResult<CancelBookingResponseDto>.Fail(accessDenied, 403);
+        }
+
         if (existing.Status == BookingStatus.Cancelled)
         {
             return ServiceResult<CancelBookingResponseDto>.Fail("Booking is already cancelled.", 400);
@@ -285,6 +295,12 @@ public sealed class BookingService(
         if (booking is null)
         {
             return ServiceResult<ModifyBookingResponseDto>.Fail("Booking not found.", 404);
+        }
+
+        var accessDenied = BookingAuthorization.GetAccessDeniedMessage(booking, currentUser);
+        if (accessDenied is not null)
+        {
+            return ServiceResult<ModifyBookingResponseDto>.Fail(accessDenied, 403);
         }
 
         if (booking.Status != BookingStatus.Confirmed)

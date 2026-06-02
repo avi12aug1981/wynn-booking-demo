@@ -50,6 +50,9 @@ try
     app.UseMiddleware<ExceptionHandlingMiddleware>();
     app.UseMiddleware<ApiKeyMiddleware>();
 
+    app.UseAuthentication();
+    app.UseAuthorization();
+
     if (!app.Environment.IsProduction())
     {
         app.UseSwagger();

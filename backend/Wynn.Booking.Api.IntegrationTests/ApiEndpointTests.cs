@@ -33,6 +33,41 @@ public sealed class ApiEndpointTests(WynnBookingApiFactory factory) : IClassFixt
     }
 
     [Fact]
+    public async Task Login_WithValidCredentials_ReturnsAccessToken()
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = "demo.member@wynn.local", password = "DemoMember2026!" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var json = await response.Content.ReadFromJsonAsync<ApiEnvelope<LoginData>>();
+        Assert.NotNull(json);
+        Assert.True(json!.Success);
+        Assert.False(string.IsNullOrWhiteSpace(json.Data?.AccessToken));
+    }
+
+    [Fact]
+    public async Task Login_WithInvalidPassword_ReturnsUnauthorized()
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = "demo.member@wynn.local", password = "wrong-password" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CancelBooking_WithoutJwt_ReturnsUnauthorized()
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/bookings/WYN-TEST/cancel",
+            new { cancellationReason = "test" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task CreateBookingSession_WithApiKey_ReturnsCreatedOrBusinessError()
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/booking-sessions")
@@ -63,5 +98,10 @@ public sealed class ApiEndpointTests(WynnBookingApiFactory factory) : IClassFixt
     private sealed class RoomSearchData
     {
         public object[]? Rooms { get; init; }
+    }
+
+    private sealed class LoginData
+    {
+        public string? AccessToken { get; init; }
     }
 }

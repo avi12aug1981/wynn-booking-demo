@@ -2,6 +2,7 @@ using System.Reflection;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Wynn.Booking.Application.Auth;
 using Wynn.Booking.Application.BookingSessions;
 using Wynn.Booking.Application.Bookings;
 using Wynn.Booking.Application.Common.Behaviors;
@@ -28,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IRoomSearchService, RoomSearchService>();
         services.AddScoped<IBookingSessionService, BookingSessionService>();
         services.AddScoped<IBookingService, BookingService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }
