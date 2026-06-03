@@ -11,6 +11,12 @@ import { Messages } from "@/app/constants/messages";
 import type { BookingType } from "@/app/types/prisma-enums";
 import { markSearchResultsStale } from "@/app/constants/search-storage";
 import AppButton from "@/components/ui/atoms/AppButton";
+import {
+  getCardExpiryMonthOptions,
+  getCardExpiryYearOptions,
+  isCardExpiryValid,
+} from "@/app/lib/utils/card-expiry";
+import { areStayDatesValid, isBeforeToday } from "@/app/lib/utils/date";
 import { createBookingDotNet } from "@/lib/api/dotnet-booking-client";
 
 const ZIP_CODE_PATTERN = /^\d{5,10}$/;
@@ -109,6 +115,8 @@ export default function BookingForm({
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClientReady, setIsClientReady] = useState(false);
+  const [expiryYear, setExpiryYear] = useState("");
+  const [expiryMonth, setExpiryMonth] = useState("");
 
   useEffect(() => {
     setIsClientReady(true);
@@ -121,12 +129,36 @@ export default function BookingForm({
     isClientReady && getDemoUserType() === "MEMBER" ? "MEMBER" : "GUEST";
   const isDemoMember = bookingType === "MEMBER";
 
+  const editableFieldClassName = "w-full border p-3 rounded-sm";
+  const lockedMemberFieldClassName =
+    "w-full border border-stone-200 p-3 rounded-sm bg-stone-100 text-stone-700 cursor-not-allowed";
+
   const confirmedGuestCount = Math.min(defaultGuestCount, maxGuests);
 
   const searchHref =
     defaultCheckInDate && defaultCheckOutDate && confirmedGuestCount
       ? `/search?checkInDate=${defaultCheckInDate}&checkOutDate=${defaultCheckOutDate}&guestCount=${confirmedGuestCount}`
       : "/search";
+
+  const expiryYearOptions = isClientReady ? getCardExpiryYearOptions() : [];
+  const expiryMonthOptions =
+    isClientReady && expiryYear
+      ? getCardExpiryMonthOptions(Number(expiryYear))
+      : [];
+
+  function handleExpiryYearChange(year: string) {
+    setExpiryYear(year);
+
+    if (!year || !expiryMonth) {
+      return;
+    }
+
+    const allowedMonths = getCardExpiryMonthOptions(Number(year));
+
+    if (!allowedMonths.includes(expiryMonth)) {
+      setExpiryMonth("");
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -178,32 +210,70 @@ export default function BookingForm({
       return;
     }
 
+    const cardExpiryMonth = String(formData.get("expiryMonth"));
+    const cardExpiryYear = String(formData.get("expiryYear"));
+
+    if (!isCardExpiryValid(cardExpiryMonth, cardExpiryYear)) {
+      setErrorMessage(Messages.Payment.CardExpired);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const submittedCheckIn = String(formData.get("checkInDate"));
+    const submittedCheckOut = String(formData.get("checkOutDate"));
+
+    if (!areStayDatesValid(submittedCheckIn, submittedCheckOut)) {
+      setErrorMessage(
+        isBeforeToday(submittedCheckIn)
+          ? Messages.Booking.CheckInDateCannotBePast
+          : Messages.Booking.CheckoutMustBeAfterCheckin
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
+    const firstName = isDemoMember
+      ? guestDetails.firstName
+      : String(formData.get("firstName"));
+    const lastName = isDemoMember
+      ? guestDetails.lastName
+      : String(formData.get("lastName"));
+    const contactEmail = isDemoMember
+      ? guestDetails.contactEmail
+      : String(formData.get("contactEmail"));
+
     const payload = {
       roomId,
       bookingSessionToken,
       bookingType,
-      firstName: String(formData.get("firstName")),
-      lastName: String(formData.get("lastName")),
+      firstName,
+      lastName,
       gender: "PREFER_NOT_TO_SAY",
-      contactEmail: String(formData.get("contactEmail")),
+      contactEmail,
       adultCount: confirmedGuestCount,
       childCount: 0,
       infantCount: 0,
       petCount: 0,
-      checkInDate: String(formData.get("checkInDate")),
-      checkOutDate: String(formData.get("checkOutDate")),
-      addressLine1: String(formData.get("addressLine1")),
-      addressLine2: String(formData.get("addressLine2") || ""),
-      city: String(formData.get("city")),
-      state: String(formData.get("state")),
-      zipCode: normalizeDigits(zipCode),
-      country: String(formData.get("country")),
+      checkInDate: submittedCheckIn,
+      checkOutDate: submittedCheckOut,
+      addressLine1: isDemoMember
+        ? guestDetails.addressLine1
+        : String(formData.get("addressLine1")),
+      addressLine2: isDemoMember
+        ? guestDetails.addressLine2
+        : String(formData.get("addressLine2") || ""),
+      city: isDemoMember ? guestDetails.city : String(formData.get("city")),
+      state: isDemoMember ? guestDetails.state : String(formData.get("state")),
+      zipCode: isDemoMember ? guestDetails.zipCode : normalizeDigits(zipCode),
+      country: isDemoMember
+        ? guestDetails.country
+        : String(formData.get("country")),
       specialRequests: String(formData.get("specialRequests") || ""),
       guests: [
         {
           sequence: 1,
-          firstName: String(formData.get("firstName")),
-          lastName: String(formData.get("lastName")),
+          firstName,
+          lastName,
           gender: "PREFER_NOT_TO_SAY",
           ageGroup: "ADULT",
         },
@@ -243,7 +313,7 @@ export default function BookingForm({
         </h2>
         {isDemoMember && (
           <p className="text-sm text-[#8c6b43] mt-2">
-            Demo member profile applied. You can edit any field before confirming.
+            {Messages.Booking.MemberProfileLocked}
           </p>
         )}
       </div>
@@ -270,7 +340,10 @@ export default function BookingForm({
           <input
             name="firstName"
             defaultValue={guestDetails.firstName}
-            className="w-full border p-3 rounded-sm"
+            className={
+              isDemoMember ? lockedMemberFieldClassName : editableFieldClassName
+            }
+            readOnly={isDemoMember}
             required
           />
         </label>
@@ -280,7 +353,10 @@ export default function BookingForm({
           <input
             name="lastName"
             defaultValue={guestDetails.lastName}
-            className="w-full border p-3 rounded-sm"
+            className={
+              isDemoMember ? lockedMemberFieldClassName : editableFieldClassName
+            }
+            readOnly={isDemoMember}
             required
           />
         </label>
@@ -291,7 +367,10 @@ export default function BookingForm({
             name="contactEmail"
             type="email"
             defaultValue={guestDetails.contactEmail}
-            className="w-full border p-3 rounded-sm"
+            className={
+              isDemoMember ? lockedMemberFieldClassName : editableFieldClassName
+            }
+            readOnly={isDemoMember}
             required
           />
         </label>
@@ -309,9 +388,12 @@ export default function BookingForm({
             placeholder="7025551234"
             title="Enter 10 to 15 digits"
             defaultValue={guestDetails.phoneNumber}
-            className="w-full border p-3 rounded-sm"
-            onKeyDown={handleDigitOnlyKeyDown}
-            onInput={handleDigitsOnlyInput}
+            className={
+              isDemoMember ? lockedMemberFieldClassName : editableFieldClassName
+            }
+            readOnly={isDemoMember}
+            onKeyDown={isDemoMember ? undefined : handleDigitOnlyKeyDown}
+            onInput={isDemoMember ? undefined : handleDigitsOnlyInput}
             required
           />
         </label>
@@ -323,7 +405,10 @@ export default function BookingForm({
           <input
             name="addressLine1"
             defaultValue={guestDetails.addressLine1}
-            className="w-full border p-3 rounded-sm"
+            className={
+              isDemoMember ? lockedMemberFieldClassName : editableFieldClassName
+            }
+            readOnly={isDemoMember}
             required
           />
         </label>
@@ -333,7 +418,10 @@ export default function BookingForm({
           <input
             name="addressLine2"
             defaultValue={guestDetails.addressLine2}
-            className="w-full border p-3 rounded-sm"
+            className={
+              isDemoMember ? lockedMemberFieldClassName : editableFieldClassName
+            }
+            readOnly={isDemoMember}
           />
         </label>
 
@@ -342,7 +430,10 @@ export default function BookingForm({
           <input
             name="city"
             defaultValue={guestDetails.city}
-            className="w-full border p-3 rounded-sm"
+            className={
+              isDemoMember ? lockedMemberFieldClassName : editableFieldClassName
+            }
+            readOnly={isDemoMember}
             required
           />
         </label>
@@ -352,7 +443,10 @@ export default function BookingForm({
           <input
             name="state"
             defaultValue={guestDetails.state}
-            className="w-full border p-3 rounded-sm"
+            className={
+              isDemoMember ? lockedMemberFieldClassName : editableFieldClassName
+            }
+            readOnly={isDemoMember}
             required
           />
         </label>
@@ -370,26 +464,41 @@ export default function BookingForm({
             placeholder="89109"
             title="Enter 5 to 10 digits"
             defaultValue={guestDetails.zipCode}
-            className="w-full border p-3 rounded-sm"
-            onKeyDown={handleDigitOnlyKeyDown}
-            onInput={handleDigitsOnlyInput}
+            className={
+              isDemoMember ? lockedMemberFieldClassName : editableFieldClassName
+            }
+            readOnly={isDemoMember}
+            onKeyDown={isDemoMember ? undefined : handleDigitOnlyKeyDown}
+            onInput={isDemoMember ? undefined : handleDigitsOnlyInput}
             required
           />
         </label>
 
         <label className="space-y-1">
           <span className="text-sm font-medium">Country</span>
-          <select
-            name="country"
-            className="w-full border p-3 rounded-sm"
-            defaultValue={guestDetails.country}
-            required
-          >
-            <option value="USA">United States</option>
-            <option value="INDIA">India</option>
-            <option value="CANADA">Canada</option>
-            <option value="UK">United Kingdom</option>
-          </select>
+          {isDemoMember ? (
+            <>
+              <input type="hidden" name="country" value={guestDetails.country} />
+              <input
+                readOnly
+                value={guestDetails.country}
+                className={lockedMemberFieldClassName}
+                aria-label="Country"
+              />
+            </>
+          ) : (
+            <select
+              name="country"
+              className={editableFieldClassName}
+              defaultValue={guestDetails.country}
+              required
+            >
+              <option value="USA">United States</option>
+              <option value="INDIA">India</option>
+              <option value="CANADA">Canada</option>
+              <option value="UK">United Kingdom</option>
+            </select>
+          )}
         </label>
       </section>
 
@@ -447,46 +556,43 @@ export default function BookingForm({
           </label>
 
           <label className="space-y-1">
-            <span className="text-sm font-medium">Expiry Month</span>
+            <span className="text-sm font-medium">Expiry Year</span>
             <select
-              name="expiryMonth"
+              name="expiryYear"
               className="w-full border p-3 rounded-sm"
               required
-              defaultValue=""
+              value={expiryYear}
+              onChange={(event) => handleExpiryYearChange(event.target.value)}
             >
               <option value="" disabled>
-                Month
+                Year
               </option>
-              {Array.from({ length: 12 }, (_, index) => (
-                <option
-                  key={index + 1}
-                  value={String(index + 1).padStart(2, "0")}
-                >
-                  {String(index + 1).padStart(2, "0")}
+              {expiryYearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
                 </option>
               ))}
             </select>
           </label>
 
           <label className="space-y-1">
-            <span className="text-sm font-medium">Expiry Year</span>
+            <span className="text-sm font-medium">Expiry Month</span>
             <select
-              name="expiryYear"
+              name="expiryMonth"
               className="w-full border p-3 rounded-sm"
               required
-              defaultValue=""
+              value={expiryMonth}
+              disabled={!expiryYear}
+              onChange={(event) => setExpiryMonth(event.target.value)}
             >
               <option value="" disabled>
-                Year
+                {expiryYear ? "Month" : "Select year first"}
               </option>
-              {Array.from({ length: 8 }, (_, index) => {
-                const year = new Date().getFullYear() + index;
-                return (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                );
-              })}
+              {expiryMonthOptions.map((month) => (
+                <option key={month} value={month}>
+                  {month}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -494,7 +600,7 @@ export default function BookingForm({
             <span className="text-sm font-medium">CVV</span>
             <input
               name="cvv"
-              type="text"
+              type="password"
               inputMode="numeric"
               autoComplete="cc-csc"
               pattern="[0-9]*"

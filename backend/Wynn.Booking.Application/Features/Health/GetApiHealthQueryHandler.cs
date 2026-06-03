@@ -15,7 +15,9 @@ public sealed class GetApiHealthQueryHandler(IHealthCheckService healthCheckServ
 
         if (!canConnect)
         {
-            return ServiceResult<ApiHealthDto>.Fail("Database connection unavailable.", 503);
+            return ServiceResult<ApiHealthDto>.Fail(
+                ApplicationMessages.Health.DatabaseUnavailable,
+                503);
         }
 
         return ServiceResult<ApiHealthDto>.Ok(

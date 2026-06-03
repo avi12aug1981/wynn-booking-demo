@@ -1,3 +1,5 @@
+using Wynn.Booking.Application.Common.Validation;
+
 namespace Wynn.Booking.Application.Common;
 
 public static class DateHelpers
@@ -21,5 +23,39 @@ public static class DateHelpers
     {
         var today = DateTime.UtcNow.Date;
         return today;
+    }
+
+    public static (bool IsValid, string? ErrorMessage) ValidateStayDateRange(
+        string checkInDate,
+        string checkOutDate)
+    {
+        var checkIn = ParseDateOnly(checkInDate);
+        var checkOut = ParseDateOnly(checkOutDate);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        if (checkIn is null || checkOut is null)
+        {
+            return (false, ApplicationMessages.Validation.ValidStayDates);
+        }
+
+        var checkInDay = DateOnly.FromDateTime(checkIn.Value);
+        var checkOutDay = DateOnly.FromDateTime(checkOut.Value);
+
+        if (checkInDay < today)
+        {
+            return (false, ApplicationMessages.Validation.CheckInCannotBePast);
+        }
+
+        if (checkOutDay < today)
+        {
+            return (false, ApplicationMessages.Validation.CheckOutCannotBePast);
+        }
+
+        if (checkOutDay <= checkInDay)
+        {
+            return (false, ApplicationMessages.Validation.CheckOutAfterCheckIn);
+        }
+
+        return (true, null);
     }
 }

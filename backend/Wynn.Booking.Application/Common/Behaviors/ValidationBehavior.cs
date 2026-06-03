@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using Wynn.Booking.Application.Common;
 using DomainValidationException = Wynn.Booking.Domain.Exceptions.ValidationException;
 
 namespace Wynn.Booking.Application.Common.Behaviors;
@@ -30,7 +31,7 @@ public sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidat
         if (failures.Count > 0)
         {
             throw new DomainValidationException(
-                "One or more validation errors occurred.",
+                ApplicationMessages.Common.ValidationErrorsOccurred,
                 failures.ConvertAll(f => f.ErrorMessage));
         }
 

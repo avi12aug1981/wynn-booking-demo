@@ -14,6 +14,12 @@ public sealed class RoomSearchService(IRoomRepository roomRepository) : IRoomSea
         decimal? minRating,
         CancellationToken cancellationToken = default)
     {
+        var dateValidation = DateHelpers.ValidateStayDateRange(checkInDate, checkOutDate);
+        if (!dateValidation.IsValid)
+        {
+            return ServiceResult<RoomSearchResponseDto>.Fail(dateValidation.ErrorMessage!, 400);
+        }
+
         var checkIn = DateHelpers.ParseDateOnly(checkInDate)!.Value;
         var checkOut = DateHelpers.ParseDateOnly(checkOutDate)!.Value;
         var nights = DateHelpers.CalculateNumberOfNights(checkIn, checkOut);
@@ -63,7 +69,10 @@ public sealed class RoomSearchService(IRoomRepository roomRepository) : IRoomSea
         if (checkIn is null || checkOut is null || checkOut <= checkIn)
         {
             return ServiceResult<RoomAvailabilityDto>.Ok(
-                new RoomAvailabilityDto(false, "unavailable", "Please provide valid booking dates."));
+                new RoomAvailabilityDto(
+                    false,
+                    "unavailable",
+                    ApplicationMessages.Room.InvalidBookingDates));
         }
 
         var room = await roomRepository.GetByIdAsync(roomId, cancellationToken);
@@ -71,7 +80,10 @@ public sealed class RoomSearchService(IRoomRepository roomRepository) : IRoomSea
         if (room is null || !room.IsActive)
         {
             return ServiceResult<RoomAvailabilityDto>.Ok(
-                new RoomAvailabilityDto(false, "unavailable", "Room is not available."));
+                new RoomAvailabilityDto(
+                    false,
+                    "unavailable",
+                    ApplicationMessages.Room.NotAvailable));
         }
 
         var availableRooms = await roomRepository.FindAvailableRoomsAsync(
@@ -81,10 +93,16 @@ public sealed class RoomSearchService(IRoomRepository roomRepository) : IRoomSea
         if (availableRooms.Any(r => r.Id == roomId))
         {
             return ServiceResult<RoomAvailabilityDto>.Ok(
-                new RoomAvailabilityDto(true, "available", "Room is available for the selected dates."));
+                new RoomAvailabilityDto(
+                    true,
+                    "available",
+                    ApplicationMessages.Room.AvailableForDates));
         }
 
         return ServiceResult<RoomAvailabilityDto>.Ok(
-            new RoomAvailabilityDto(false, "booked", "This room is not available for the selected dates."));
+            new RoomAvailabilityDto(
+                false,
+                "booked",
+                ApplicationMessages.Room.UnavailableForDates));
     }
 }

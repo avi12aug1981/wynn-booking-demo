@@ -1,3 +1,11 @@
+export const DEMO_SESSION_CHANGED_EVENT = "wynn-demo-session-changed";
+
+function notifyDemoSessionChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(DEMO_SESSION_CHANGED_EVENT));
+  }
+}
+
 export const DemoUserStorageKeys = {
   userType: "wynnDemoUserType",
   accessToken: "wynnMemberAccessToken",
@@ -40,16 +48,24 @@ export const EMPTY_GUEST_DETAILS_DEFAULTS: DemoGuestDetailsDefaults = {
   country: "USA",
 };
 
-/** Demo member sign-in (login page + appsettings DemoAuth). */
+const DEFAULT_DEMO_MEMBER_EMAIL = "demo.member@wynn.local";
+const DEFAULT_DEMO_MEMBER_PASSWORD = "demo.member";
+
+function readDemoEnv(name: string, fallback: string) {
+  const value = process.env[name]?.trim();
+  return value || fallback;
+}
+
+/** Demo member sign-in (login page + appsettings DemoAuth). Override via .env — see .env.example. */
 export const DEMO_MEMBER_CREDENTIALS = {
-  email: "demo.member@wynn.local",
-  password: "demo.member",
-} as const;
+  email: readDemoEnv("NEXT_PUBLIC_DEMO_MEMBER_EMAIL", DEFAULT_DEMO_MEMBER_EMAIL),
+  password: readDemoEnv("NEXT_PUBLIC_DEMO_MEMBER_PASSWORD", DEFAULT_DEMO_MEMBER_PASSWORD),
+};
 
 export const DEMO_MEMBER_GUEST_DETAILS: DemoGuestDetailsDefaults = {
-  firstName: "Avadesh",
-  lastName: "Demo Member",
-  contactEmail: "demo.member@wynn.local",
+  firstName: "Demo",
+  lastName: "Member",
+  contactEmail: DEMO_MEMBER_CREDENTIALS.email,
   phoneNumber: "7025550100",
   addressLine1: "3131 Las Vegas Blvd South",
   addressLine2: "",
@@ -66,6 +82,7 @@ export function setDemoGuestSession() {
 
   clearMemberAuthStorage();
   sessionStorage.setItem(DemoUserStorageKeys.userType, "GUEST");
+  notifyDemoSessionChanged();
 }
 
 export function setDemoMemberSession() {
@@ -74,6 +91,7 @@ export function setDemoMemberSession() {
   }
 
   sessionStorage.setItem(DemoUserStorageKeys.userType, "MEMBER");
+  notifyDemoSessionChanged();
 }
 
 export function setDemoMemberAuth(
@@ -90,6 +108,7 @@ export function setDemoMemberAuth(
     DemoUserStorageKeys.memberProfile,
     JSON.stringify(profile)
   );
+  notifyDemoSessionChanged();
 }
 
 function clearMemberAuthStorage() {
@@ -130,6 +149,7 @@ export function logoutDemoSession() {
 
   sessionStorage.removeItem(DemoUserStorageKeys.userType);
   clearMemberAuthStorage();
+  notifyDemoSessionChanged();
 }
 
 export function isMemberAuthenticated() {
@@ -161,8 +181,25 @@ export function isValidDemoMemberLogin(email: string, password: string) {
   );
 }
 
+function memberGuestDetailsFromProfile(
+  profile: DemoMemberProfile
+): DemoGuestDetailsDefaults {
+  return {
+    ...DEMO_MEMBER_GUEST_DETAILS,
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    contactEmail: profile.email,
+  };
+}
+
 export function getDemoGuestDetailsDefaults(): DemoGuestDetailsDefaults {
   if (getDemoUserType() === "MEMBER") {
+    const profile = getMemberProfile();
+
+    if (profile) {
+      return memberGuestDetailsFromProfile(profile);
+    }
+
     return { ...DEMO_MEMBER_GUEST_DETAILS };
   }
 

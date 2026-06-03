@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Wynn.Booking.Api.Configuration;
+using Wynn.Booking.Application.Common;
 
 namespace Wynn.Booking.Api.Middleware;
 
@@ -25,7 +26,7 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, IOptions<ApiSecurityO
             await context.Response.WriteAsJsonAsync(new
             {
                 success = false,
-                message = "Unauthorized.",
+                message = ApplicationMessages.Common.Unauthorized,
                 traceId = context.TraceIdentifier,
             });
             return;

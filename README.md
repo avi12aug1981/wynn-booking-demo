@@ -44,12 +44,12 @@ features/app-router
 API Layer / Services
    |
    v
-Prisma / ASP.NET Core Web API
+ASP.NET Core Web API (primary) · Prisma (legacy/local optional)
    |
    v
 Database
 
- ## Technology Stack
+## Technology Stack
 
 ### Frontend
 
@@ -149,7 +149,27 @@ docs/
 ├── RELIABILITY.md
 ├── TESTING.md
 ├── DEPLOYMENT.md
-├── DEMO-SCRIPT.md
 ├── DesignPatterns.md
-└── FolderStructure.md
+├── FolderStructure.md
+├── API-REFERENCE.md     # Swagger cheat sheet
+└── screenshots/         # Capture guide (images stay local)
 ```
+
+### What not to commit
+
+Keep these **local only** (listed in `.gitignore`):
+
+- `docs/INTERVIEW-QA.md`, `docs/PRESENTATION.md`, `docs/DEMO-SCRIPT.md`
+- Screenshot PNGs under `docs/screenshots/`
+- `.env`, `appsettings.Development.json`, real SMTP/SQL credentials
+
+Default demo sign-in in the repo: `demo.member@wynn.local` / `demo.member`. For your own email or inbox testing, copy `appsettings.Development.example.json` → `appsettings.Development.json` and set `NEXT_PUBLIC_DEMO_MEMBER_*` in `.env` — do not push those files.
+
+### Documentation (in repo)
+
+| Doc | Use |
+|-----|-----|
+| [API-REFERENCE.md](docs/API-REFERENCE.md) | Explain every Swagger endpoint |
+| [Architecture.md](docs/Architecture.md) | System overview |
+| [SECURITY.md](docs/SECURITY.md) | Auth, secrets, git hygiene |
+| [screenshots/README.md](docs/screenshots/README.md) | Screenshot capture checklist (files stay local) |

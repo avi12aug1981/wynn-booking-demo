@@ -24,6 +24,17 @@ public sealed class BookingService(
         CreateBookingRequestDto request,
         CancellationToken cancellationToken = default)
     {
+        var dateValidation = DateHelpers.ValidateStayDateRange(
+            request.CheckInDate,
+            request.CheckOutDate);
+
+        if (!dateValidation.IsValid)
+        {
+            return ServiceResult<CreateBookingResponseDto>.Fail(
+                dateValidation.ErrorMessage!,
+                400);
+        }
+
         var checkIn = DateHelpers.ParseDateOnly(request.CheckInDate)!.Value;
         var checkOut = DateHelpers.ParseDateOnly(request.CheckOutDate)!.Value;
 
@@ -36,28 +47,36 @@ public sealed class BookingService(
 
         if (room is null || !room.IsActive || room.Status != RoomStatus.Available)
         {
-            return ServiceResult<CreateBookingResponseDto>.Fail("Selected room is not available.", 404);
+            return ServiceResult<CreateBookingResponseDto>.Fail(
+                ApplicationMessages.Booking.SelectedRoomNotAvailable,
+                404);
         }
 
         if (totalGuestCount > room.MaxGuests)
         {
-            return ServiceResult<CreateBookingResponseDto>.Fail("Guest count exceeds room capacity.", 400);
+            return ServiceResult<CreateBookingResponseDto>.Fail(
+                ApplicationMessages.Booking.GuestCountExceedsCapacity,
+                400);
         }
 
         if (!room.PetsAllowed && petCount > 0)
         {
-            return ServiceResult<CreateBookingResponseDto>.Fail("Pets are not allowed in this room.", 400);
+            return ServiceResult<CreateBookingResponseDto>.Fail(
+                ApplicationMessages.Booking.PetsNotAllowed,
+                400);
         }
 
         if (room.PetsAllowed && petCount > 2)
         {
-            return ServiceResult<CreateBookingResponseDto>.Fail("Maximum of 2 pets allowed.", 400);
+            return ServiceResult<CreateBookingResponseDto>.Fail(
+                ApplicationMessages.Booking.MaxPetsExceeded,
+                400);
         }
 
         if (string.IsNullOrWhiteSpace(request.BookingSessionToken))
         {
             return ServiceResult<CreateBookingResponseDto>.Fail(
-                "Booking session token is required. Start checkout via POST /api/booking-sessions.",
+                ApplicationMessages.Validation.BookingSessionTokenRequired,
                 400);
         }
 
@@ -68,7 +87,7 @@ public sealed class BookingService(
         if (session is null || session.Status != BookingSessionStatus.Active)
         {
             return ServiceResult<CreateBookingResponseDto>.Fail(
-                "Booking session is invalid or has expired.",
+                ApplicationMessages.Booking.SessionInvalidOrExpired,
                 409);
         }
 
@@ -76,7 +95,7 @@ public sealed class BookingService(
         {
             await bookingSessionRepository.ExpireAsync(session.Id, cancellationToken);
             return ServiceResult<CreateBookingResponseDto>.Fail(
-                "Booking session is invalid or has expired.",
+                ApplicationMessages.Booking.SessionInvalidOrExpired,
                 409);
         }
 
@@ -86,7 +105,7 @@ public sealed class BookingService(
             session.CheckOutDate != checkOut)
         {
             return ServiceResult<CreateBookingResponseDto>.Fail(
-                "Booking session does not match the reservation details.",
+                ApplicationMessages.Booking.SessionMismatch,
                 400);
         }
 
@@ -101,7 +120,7 @@ public sealed class BookingService(
         if (availability.Data is not { Available: true })
         {
             return ServiceResult<CreateBookingResponseDto>.Fail(
-                availability.Data?.Message ?? "Room is not available.",
+                availability.Data?.Message ?? ApplicationMessages.Booking.RoomNotAvailable,
                 409);
         }
 
@@ -112,8 +131,26 @@ public sealed class BookingService(
         var totalPrice = decimal.Round(pricePerNight * numberOfNights - discountAmount + taxAmount, 2);
         var now = DateTime.UtcNow;
 
-        var memberId = request.MemberId ?? currentUser.MemberId;
-        var bookingType = memberId.HasValue ? BookingType.Member : request.BookingType;
+        int? memberId = null;
+        var bookingType = request.BookingType;
+
+        if (request.BookingType == BookingType.Member)
+        {
+            memberId = request.MemberId ?? currentUser.MemberId;
+
+            if (!memberId.HasValue)
+            {
+                return ServiceResult<CreateBookingResponseDto>.Fail(
+                    ApplicationMessages.Authorization.AuthenticationRequiredSignInAgain,
+                    401);
+            }
+
+            var memberContactError = ValidateMemberContactMatchesAccount(request);
+            if (memberContactError is not null)
+            {
+                return ServiceResult<CreateBookingResponseDto>.Fail(memberContactError, 400);
+            }
+        }
 
         var booking = new BookingEntity
         {
@@ -173,8 +210,18 @@ public sealed class BookingService(
             var confirmationEmailSent = false;
             try
             {
-                await confirmationNotifier.NotifyAsync(created, cancellationToken);
-                confirmationEmailSent = true;
+                var bookingForEmail = await bookingRepository.FindDetailsByReferenceNumberAsync(
+                    created.ReferenceNumber,
+                    cancellationToken);
+
+                if (bookingForEmail is not null)
+                {
+                    await confirmationNotifier.NotifyAsync(bookingForEmail, cancellationToken);
+                    await bookingRepository.MarkConfirmationEmailSentAsync(
+                        created.Id,
+                        cancellationToken);
+                    confirmationEmailSent = true;
+                }
             }
             catch (Exception ex)
             {
@@ -208,12 +255,16 @@ public sealed class BookingService(
     {
         if (!currentUser.IsAuthenticated || !currentUser.MemberId.HasValue)
         {
-            return ServiceResult<MemberBookingsResponseDto>.Fail("Authentication is required.", 401);
+            return ServiceResult<MemberBookingsResponseDto>.Fail(
+                ApplicationMessages.Authorization.AuthenticationRequired,
+                401);
         }
 
-        var bookings = await bookingRepository.FindByMemberIdAsync(
-            currentUser.MemberId.Value,
-            cancellationToken);
+        var bookings = (await bookingRepository.FindByMemberIdAsync(
+                currentUser.MemberId.Value,
+                cancellationToken))
+            .Where(booking => BookingAuthorization.ShouldAppearInMemberHistory(booking, currentUser))
+            .ToList();
 
         var summaries = bookings.Select(booking => new MemberBookingSummaryDto(
             booking.ReferenceNumber,
@@ -240,10 +291,52 @@ public sealed class BookingService(
 
         if (booking is null)
         {
-            return ServiceResult<object>.Fail("Booking not found.", 404);
+            return ServiceResult<object>.Fail(ApplicationMessages.Booking.NotFound, 404);
         }
 
-        return ServiceResult<object>.Ok(new
+        var viewDenied = BookingAuthorization.GetViewDeniedMessage(booking, currentUser);
+        if (viewDenied is not null)
+        {
+            var statusCode =
+                viewDenied == ApplicationMessages.Authorization.AuthenticationRequired
+                    ? 401
+                    : 403;
+
+            return ServiceResult<object>.Fail(viewDenied, statusCode);
+        }
+
+        return ServiceResult<object>.Ok(MapBookingDetails(booking));
+    }
+
+    public async Task<ServiceResult<object>> GetByReferenceForManageAsync(
+        string referenceNumber,
+        CancellationToken cancellationToken = default)
+    {
+        var booking = await bookingRepository.FindDetailsByReferenceNumberAsync(
+            referenceNumber,
+            cancellationToken);
+
+        if (booking is null)
+        {
+            return ServiceResult<object>.Fail(ApplicationMessages.Booking.NotFound, 404);
+        }
+
+        var manageDenied = BookingAuthorization.GetManageViewDeniedMessage(booking, currentUser);
+        if (manageDenied is not null)
+        {
+            var statusCode =
+                manageDenied == ApplicationMessages.Authorization.AuthenticationRequired
+                    ? 401
+                    : 403;
+
+            return ServiceResult<object>.Fail(manageDenied, statusCode);
+        }
+
+        return ServiceResult<object>.Ok(MapBookingDetails(booking));
+    }
+
+    private static object MapBookingDetails(BookingEntity booking) =>
+        new
         {
             booking.ReferenceNumber,
             booking.RoomId,
@@ -251,12 +344,22 @@ public sealed class BookingService(
             booking.FirstName,
             booking.LastName,
             booking.ContactEmail,
+            booking.AddressLine1,
+            booking.AddressLine2,
+            booking.City,
+            booking.State,
+            booking.ZipCode,
+            booking.Country,
             booking.AdultCount,
             booking.ChildCount,
             booking.InfantCount,
+            booking.PetCount,
             booking.CheckInDate,
             booking.CheckOutDate,
             booking.NumberOfNights,
+            booking.PricePerNight,
+            booking.DiscountAmount,
+            booking.TaxAmount,
             booking.TotalPrice,
             booking.Status,
             booking.PaymentStatus,
@@ -269,8 +372,7 @@ public sealed class BookingService(
                 g.LastName,
                 g.AgeGroup,
             }),
-        });
-    }
+        };
 
     public async Task<ServiceResult<CancelBookingResponseDto>> CancelAsync(
         string referenceNumber,
@@ -281,7 +383,9 @@ public sealed class BookingService(
 
         if (existing is null)
         {
-            return ServiceResult<CancelBookingResponseDto>.Fail("Booking not found.", 404);
+            return ServiceResult<CancelBookingResponseDto>.Fail(
+                ApplicationMessages.Booking.NotFound,
+                404);
         }
 
         var accessDenied = BookingAuthorization.GetAccessDeniedMessage(existing, currentUser);
@@ -292,13 +396,15 @@ public sealed class BookingService(
 
         if (existing.Status == BookingStatus.Cancelled)
         {
-            return ServiceResult<CancelBookingResponseDto>.Fail("Booking is already cancelled.", 400);
+            return ServiceResult<CancelBookingResponseDto>.Fail(
+                ApplicationMessages.Booking.AlreadyCancelled,
+                400);
         }
 
         if (existing.CheckInDate.Date <= DateTime.UtcNow.Date)
         {
             return ServiceResult<CancelBookingResponseDto>.Fail(
-                "Cannot cancel a reservation on or after the check-in date.",
+                ApplicationMessages.Booking.CannotCancelOnOrAfterCheckIn,
                 400);
         }
 
@@ -312,7 +418,7 @@ public sealed class BookingService(
                 cancelled.ReferenceNumber,
                 cancelled.Status,
                 cancelled.PaymentStatus,
-                "Booking has been cancelled.",
+                ApplicationMessages.Booking.Cancelled,
                 cancelled.UpdatedAt));
     }
 
@@ -327,7 +433,9 @@ public sealed class BookingService(
 
         if (booking is null)
         {
-            return ServiceResult<ModifyBookingResponseDto>.Fail("Booking not found.", 404);
+            return ServiceResult<ModifyBookingResponseDto>.Fail(
+                ApplicationMessages.Booking.NotFound,
+                404);
         }
 
         var accessDenied = BookingAuthorization.GetAccessDeniedMessage(booking, currentUser);
@@ -339,14 +447,14 @@ public sealed class BookingService(
         if (booking.Status != BookingStatus.Confirmed)
         {
             return ServiceResult<ModifyBookingResponseDto>.Fail(
-                "Only confirmed reservations can be modified.",
+                ApplicationMessages.Booking.OnlyConfirmedCanBeModified,
                 400);
         }
 
-        if (booking.CheckInDate.Date <= DateTime.UtcNow.Date)
+        if (booking.CheckInDate.Date < DateTime.UtcNow.Date)
         {
             return ServiceResult<ModifyBookingResponseDto>.Fail(
-                "Cannot modify a reservation on or after the check-in date.",
+                ApplicationMessages.Booking.CannotModifyAfterCheckInPassed,
                 400);
         }
 
@@ -358,7 +466,9 @@ public sealed class BookingService(
             var parsed = DateHelpers.ParseDateOnly(request.CheckInDate);
             if (parsed is null)
             {
-                return ServiceResult<ModifyBookingResponseDto>.Fail("Invalid check-in date.", 400);
+                return ServiceResult<ModifyBookingResponseDto>.Fail(
+                    ApplicationMessages.Booking.InvalidCheckInDate,
+                    400);
             }
 
             checkIn = parsed.Value;
@@ -373,7 +483,9 @@ public sealed class BookingService(
             var parsed = DateHelpers.ParseDateOnly(request.CheckOutDate);
             if (parsed is null)
             {
-                return ServiceResult<ModifyBookingResponseDto>.Fail("Invalid check-out date.", 400);
+                return ServiceResult<ModifyBookingResponseDto>.Fail(
+                    ApplicationMessages.Booking.InvalidCheckOutDate,
+                    400);
             }
 
             checkOut = parsed.Value;
@@ -383,9 +495,15 @@ public sealed class BookingService(
             checkOut = booking.CheckOutDate;
         }
 
-        if (checkOut <= checkIn)
+        var stayDateValidation = DateHelpers.ValidateStayDateRange(
+            checkIn.ToString("yyyy-MM-dd"),
+            checkOut.ToString("yyyy-MM-dd"));
+
+        if (!stayDateValidation.IsValid)
         {
-            return ServiceResult<ModifyBookingResponseDto>.Fail("Check-out must be after check-in.", 400);
+            return ServiceResult<ModifyBookingResponseDto>.Fail(
+                stayDateValidation.ErrorMessage!,
+                400);
         }
 
         var adultCount = request.AdultCount ?? booking.AdultCount;
@@ -398,18 +516,22 @@ public sealed class BookingService(
         if (totalGuests > room.MaxGuests)
         {
             return ServiceResult<ModifyBookingResponseDto>.Fail(
-                "Guest count exceeds room capacity.",
+                ApplicationMessages.Booking.GuestCountExceedsCapacity,
                 400);
         }
 
         if (!room.PetsAllowed && petCount > 0)
         {
-            return ServiceResult<ModifyBookingResponseDto>.Fail("Pets are not allowed in this room.", 400);
+            return ServiceResult<ModifyBookingResponseDto>.Fail(
+                ApplicationMessages.Booking.PetsNotAllowed,
+                400);
         }
 
         if (room.PetsAllowed && petCount > 2)
         {
-            return ServiceResult<ModifyBookingResponseDto>.Fail("Maximum of 2 pets allowed.", 400);
+            return ServiceResult<ModifyBookingResponseDto>.Fail(
+                ApplicationMessages.Booking.MaxPetsExceeded,
+                400);
         }
 
         booking.CheckInDate = checkIn;
@@ -424,7 +546,8 @@ public sealed class BookingService(
             booking.SpecialRequests = request.SpecialRequests.Trim();
         }
 
-        if (!string.IsNullOrWhiteSpace(request.ContactEmail))
+        if (booking.BookingType != BookingType.Member &&
+            !string.IsNullOrWhiteSpace(request.ContactEmail))
         {
             booking.ContactEmail = request.ContactEmail.Trim();
         }
@@ -457,12 +580,38 @@ public sealed class BookingService(
                     updated.TotalPrice,
                     updated.Status,
                     updated.PaymentStatus,
-                    "Reservation has been updated."));
+                    ApplicationMessages.Booking.Updated));
         }
         catch (ConflictException conflict)
         {
             return ServiceResult<ModifyBookingResponseDto>.Fail(conflict.Message, conflict.StatusCode);
         }
+    }
+
+    private string? ValidateMemberContactMatchesAccount(CreateBookingRequestDto request)
+    {
+        if (string.IsNullOrWhiteSpace(currentUser.Email) ||
+            !string.Equals(
+                request.ContactEmail.Trim(),
+                currentUser.Email,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return ApplicationMessages.Booking.MemberContactMustMatchAccount;
+        }
+
+        if (string.IsNullOrWhiteSpace(currentUser.FirstName) ||
+            string.IsNullOrWhiteSpace(currentUser.LastName))
+        {
+            return ApplicationMessages.Booking.MemberContactMustMatchAccount;
+        }
+
+        if (!string.Equals(request.FirstName.Trim(), currentUser.FirstName, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(request.LastName.Trim(), currentUser.LastName, StringComparison.OrdinalIgnoreCase))
+        {
+            return ApplicationMessages.Booking.MemberContactMustMatchAccount;
+        }
+
+        return null;
     }
 
 }

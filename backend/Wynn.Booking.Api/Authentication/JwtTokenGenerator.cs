@@ -25,6 +25,7 @@ public sealed class JwtTokenGenerator(IOptions<JwtOptions> options) : IJwtTokenG
             new(JwtRegisteredClaimNames.GivenName, user.FirstName),
             new(JwtRegisteredClaimNames.FamilyName, user.LastName),
             new(ClaimTypes.Role, JwtClaimTypes.RoleMember),
+            new("role", JwtClaimTypes.RoleMember),
             new(JwtClaimTypes.Tier, user.Tier),
         };
 

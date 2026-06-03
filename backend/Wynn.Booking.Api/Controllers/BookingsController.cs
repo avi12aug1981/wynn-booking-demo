@@ -34,6 +34,17 @@ public sealed class BookingsController(ISender sender) : ApiControllerBase
         return FromServiceResult(result);
     }
 
+    /// <summary>Member reservation detail (manage / history). Guest bookings are not accessible here.</summary>
+    [Authorize(Roles = JwtClaimTypes.RoleMember)]
+    [HttpGet("{referenceNumber}/manage")]
+    public async Task<IActionResult> GetByReferenceForManage(
+        string referenceNumber,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetBookingForManageQuery(referenceNumber), cancellationToken);
+        return FromServiceResult(result);
+    }
+
     [AllowAnonymous]
     [HttpGet("{referenceNumber}")]
     public async Task<IActionResult> GetByReferenceNumber(

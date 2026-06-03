@@ -15,6 +15,17 @@ public sealed class BookingSessionService(
         CreateBookingSessionRequestDto request,
         CancellationToken cancellationToken = default)
     {
+        var dateValidation = DateHelpers.ValidateStayDateRange(
+            request.CheckInDate,
+            request.CheckOutDate);
+
+        if (!dateValidation.IsValid)
+        {
+            return ServiceResult<CreateBookingSessionResponseDto>.Fail(
+                dateValidation.ErrorMessage!,
+                400);
+        }
+
         var checkIn = DateHelpers.ParseDateOnly(request.CheckInDate)!.Value;
         var checkOut = DateHelpers.ParseDateOnly(request.CheckOutDate)!.Value;
 
@@ -23,14 +34,14 @@ public sealed class BookingSessionService(
         if (room is null || !room.IsActive || room.Status != RoomStatus.Available)
         {
             return ServiceResult<CreateBookingSessionResponseDto>.Fail(
-                "Selected room is not available.",
+                ApplicationMessages.Booking.SelectedRoomNotAvailable,
                 404);
         }
 
         if (request.GuestCount > room.MaxGuests)
         {
             return ServiceResult<CreateBookingSessionResponseDto>.Fail(
-                "Guest count exceeds room capacity.",
+                ApplicationMessages.Booking.GuestCountExceedsCapacity,
                 400);
         }
 
@@ -44,7 +55,7 @@ public sealed class BookingSessionService(
         {
             var status = availability.Data?.Reason == "booked" ? 409 : 404;
             return ServiceResult<CreateBookingSessionResponseDto>.Fail(
-                availability.Data?.Message ?? "Room is not available.",
+                availability.Data?.Message ?? ApplicationMessages.Booking.RoomNotAvailable,
                 status);
         }
 
@@ -82,18 +93,24 @@ public sealed class BookingSessionService(
 
         if (session is null)
         {
-            return ServiceResult<BookingSessionDetailDto>.Fail("Booking session not found.", 404);
+            return ServiceResult<BookingSessionDetailDto>.Fail(
+                ApplicationMessages.BookingSession.NotFound,
+                404);
         }
 
         if (session.Status != BookingSessionStatus.Active)
         {
-            return ServiceResult<BookingSessionDetailDto>.Fail("Booking session is no longer active.", 400);
+            return ServiceResult<BookingSessionDetailDto>.Fail(
+                ApplicationMessages.BookingSession.Inactive,
+                400);
         }
 
         if (session.ExpiresAt < DateTime.UtcNow)
         {
             await bookingSessionRepository.ExpireAsync(session.Id, cancellationToken);
-            return ServiceResult<BookingSessionDetailDto>.Fail("Booking session has expired.", 400);
+            return ServiceResult<BookingSessionDetailDto>.Fail(
+                ApplicationMessages.BookingSession.Expired,
+                400);
         }
 
         return ServiceResult<BookingSessionDetailDto>.Ok(MapToDetail(session));

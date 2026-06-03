@@ -1,6 +1,11 @@
 import type { RoomSearchResult } from "@/app/types/room";
 import type { DemoMemberProfile } from "@/app/constants/demo-user";
 import { getMemberAccessToken } from "@/app/constants/demo-user";
+import {
+  formatApiUnreachableMessage,
+  formatBookingApiStatusError,
+  Messages,
+} from "@/app/constants/messages";
 import { bookingApiConfig } from "@/lib/api/booking-api-config";
 
 export type ApiEnvelope<T> = {
@@ -30,13 +35,27 @@ export type ReservationDetails = {
   firstName: string;
   lastName: string;
   contactEmail: string;
+  addressLine1?: string;
+  addressLine2?: string | null;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  adultCount?: number;
+  childCount?: number;
+  infantCount?: number;
+  petCount?: number;
   checkInDate: string;
   checkOutDate: string;
   numberOfNights: number;
+  pricePerNight?: number;
+  discountAmount?: number;
+  taxAmount?: number;
   totalPrice: number;
   status: number;
   paymentStatus: number;
   confirmationEmailSent: boolean;
+  specialRequests?: string | null;
   guests: Array<{
     sequence: number;
     firstName: string;
@@ -64,8 +83,44 @@ function dotnetUrl(path: string) {
   return `${bookingApiConfig.dotnetApiUrl}${path}`;
 }
 
+async function dotnetFetch(
+  input: string,
+  init?: RequestInit
+): Promise<Response | null> {
+  try {
+    return await fetch(input, init);
+  } catch {
+    return null;
+  }
+}
+
+function unreachableEnvelope<T>(): ApiEnvelope<T> {
+  return {
+    success: false,
+    message: formatApiUnreachableMessage(bookingApiConfig.dotnetApiUrl),
+  };
+}
+
 async function parseEnvelope<T>(response: Response): Promise<ApiEnvelope<T>> {
-  return (await response.json()) as ApiEnvelope<T>;
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!contentType.includes("application/json")) {
+    return {
+      success: false,
+      message: response.ok
+        ? Messages.ApiClient.UnexpectedResponse
+        : formatBookingApiStatusError(response.status),
+    };
+  }
+
+  try {
+    return (await response.json()) as ApiEnvelope<T>;
+  } catch {
+    return {
+      success: false,
+      message: Messages.ApiClient.InvalidResponse,
+    };
+  }
 }
 
 function memberAuthHeaders(): HeadersInit {
@@ -162,18 +217,63 @@ export async function getMemberBookingsDotNet() {
     response
   );
 
+  const rawBookings = envelope.data?.bookings ?? [];
+  const bookings = rawBookings.map((booking) => ({
+    ...booking,
+    status:
+      typeof booking.status === "string"
+        ? booking.status === "Cancelled"
+          ? 1
+          : 0
+        : booking.status,
+  }));
+
   return {
     response,
     envelope,
-    bookings: envelope.data?.bookings ?? [],
+    bookings,
   };
 }
 
 export async function getBookingByReferenceDotNet(referenceNumber: string) {
-  const response = await fetch(
+  const response = await dotnetFetch(
     dotnetUrl(`/api/Bookings/${encodeURIComponent(referenceNumber)}`),
-    { cache: "no-store" }
+    {
+      headers: memberAuthHeaders(),
+      cache: "no-store",
+    }
   );
+
+  if (!response) {
+    return {
+      response: new Response(null, { status: 503 }),
+      envelope: unreachableEnvelope<ReservationDetails>(),
+    };
+  }
+
+  const envelope = await parseEnvelope<ReservationDetails>(response);
+
+  return { response, envelope };
+}
+
+/** Member-only reservation detail for /reservations/* (not guest confirmations). */
+export async function getMemberBookingForManageDotNet(referenceNumber: string) {
+  const response = await dotnetFetch(
+    dotnetUrl(
+      `/api/Bookings/${encodeURIComponent(referenceNumber)}/manage`
+    ),
+    {
+      headers: jsonHeaders(),
+      cache: "no-store",
+    }
+  );
+
+  if (!response) {
+    return {
+      response: new Response(null, { status: 503 }),
+      envelope: unreachableEnvelope<ReservationDetails>(),
+    };
+  }
 
   const envelope = await parseEnvelope<ReservationDetails>(response);
 
@@ -231,6 +331,89 @@ export async function modifyBookingDotNet(
   return { response, envelope };
 }
 
+export type RoomDetails = {
+  id: number;
+  name: string;
+  type: string;
+  description: string;
+  pricePerNight: number;
+  maxGuests: number;
+  amenities: string[];
+  imageUrl?: string | null;
+  petsAllowed: boolean;
+  smokingAllowed: boolean;
+  rating: number;
+  reviewCount: number;
+  status: string;
+  numberOfNights?: number | null;
+  estimatedSubtotal?: number | null;
+};
+
+export async function getRoomDetailsDotNet(
+  roomId: number,
+  params?: { checkInDate?: string; checkOutDate?: string }
+) {
+  const query = new URLSearchParams();
+
+  if (params?.checkInDate) {
+    query.set("checkInDate", params.checkInDate);
+  }
+
+  if (params?.checkOutDate) {
+    query.set("checkOutDate", params.checkOutDate);
+  }
+
+  const suffix = query.size > 0 ? `?${query}` : "";
+  const response = await dotnetFetch(
+    `${dotnetUrl(`/api/Rooms/${roomId}`)}${suffix}`,
+    { cache: "no-store" }
+  );
+
+  if (!response) {
+    return {
+      ok: false as const,
+      status: 0,
+      message: unreachableEnvelope<RoomDetails>().message,
+    };
+  }
+
+  const envelope = await parseEnvelope<RoomDetails>(response);
+
+  if (!response.ok || !envelope.success || !envelope.data) {
+    return {
+      ok: false as const,
+      status: response.status,
+      message: envelope.message ?? Messages.ApiClient.RoomNotFound,
+    };
+  }
+
+  const room = envelope.data;
+
+  return {
+    ok: true as const,
+    room: {
+      id: room.id,
+      name: room.name,
+      type: room.type,
+      description: room.description,
+      pricePerNight: Number(room.pricePerNight),
+      maxGuests: room.maxGuests,
+      amenities: room.amenities ?? [],
+      imageUrl: room.imageUrl,
+      petsAllowed: room.petsAllowed,
+      smokingAllowed: room.smokingAllowed,
+      rating: Number(room.rating),
+      reviewCount: room.reviewCount,
+      status: room.status,
+      numberOfNights: room.numberOfNights ?? undefined,
+      estimatedSubtotal:
+        room.estimatedSubtotal != null
+          ? Number(room.estimatedSubtotal)
+          : undefined,
+    },
+  };
+}
+
 export async function searchRoomsDotNet(params: {
   checkInDate: string;
   checkOutDate: string;
@@ -249,9 +432,19 @@ export async function searchRoomsDotNet(params: {
   if (params.nonSmoking) query.set("nonSmoking", "true");
   if (params.minRating) query.set("minRating", String(params.minRating));
 
-  const response = await fetch(`${dotnetUrl("/api/Rooms")}?${query}`, {
+  const response = await dotnetFetch(`${dotnetUrl("/api/Rooms")}?${query}`, {
     cache: "no-store",
   });
+
+  if (!response) {
+    const envelope = unreachableEnvelope<{ rooms: DotNetRoom[] }>();
+    return {
+      ok: false,
+      status: 0,
+      message: envelope.message,
+      rooms: [],
+    };
+  }
 
   const envelope = await parseEnvelope<{ rooms: DotNetRoom[] }>(response);
 
@@ -269,7 +462,7 @@ export async function createBookingSessionDotNet(body: {
   checkOutDate: string;
   guestCount: number;
 }) {
-  const response = await fetch(dotnetUrl("/api/booking-sessions"), {
+  const response = await dotnetFetch(dotnetUrl("/api/booking-sessions"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -278,6 +471,17 @@ export async function createBookingSessionDotNet(body: {
     body: JSON.stringify(body),
     cache: "no-store",
   });
+
+  if (!response) {
+    return {
+      response: new Response(null, { status: 503 }),
+      envelope: unreachableEnvelope<{
+        token: string;
+        redirectUrl: string;
+        numberOfNights: number;
+      }>(),
+    };
+  }
 
   const envelope = await parseEnvelope<{
     token: string;
@@ -289,9 +493,17 @@ export async function createBookingSessionDotNet(body: {
 }
 
 export async function getBookingSessionDotNet(token: string) {
-  const response = await fetch(dotnetUrl(`/api/booking-sessions/${token}`), {
-    cache: "no-store",
-  });
+  const response = await dotnetFetch(
+    dotnetUrl(`/api/booking-sessions/${token}`),
+    { cache: "no-store" }
+  );
+
+  if (!response) {
+    return {
+      response: new Response(null, { status: 503 }),
+      envelope: unreachableEnvelope<DotNetBookingSession>(),
+    };
+  }
 
   const envelope = await parseEnvelope<DotNetBookingSession>(response);
 
@@ -345,9 +557,14 @@ export async function createBookingDotNet(body: Record<string, unknown>) {
       : body.guests,
   };
 
+  const isGuestBooking =
+    body.bookingType === "GUEST" || body.bookingType === 0;
+
   const response = await fetch(dotnetUrl("/api/Bookings"), {
     method: "POST",
-    headers: jsonHeaders(),
+    headers: isGuestBooking
+      ? { "Content-Type": "application/json" }
+      : jsonHeaders(),
     body: JSON.stringify(payload),
     cache: "no-store",
   });
@@ -361,22 +578,7 @@ export async function createBookingDotNet(body: Record<string, unknown>) {
 
 const AGE_GROUP_LABELS = ["ADULT", "CHILD", "INFANT"] as const;
 
-export function mapDotNetBookingForConfirmation(
-  booking: ReservationDetails & {
-    pricePerNight?: number;
-    discountAmount?: number;
-    taxAmount?: number;
-    addressLine1?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-    country?: string;
-    adultCount?: number;
-    childCount?: number;
-    infantCount?: number;
-    petCount?: number;
-  }
-) {
+export function mapDotNetBookingForConfirmation(booking: ReservationDetails) {
   const PAYMENT_STATUS_LABELS = ["PENDING", "PAID", "FAILED", "REFUNDED"] as const;
 
   return {
@@ -404,6 +606,7 @@ export function mapDotNetBookingForConfirmation(
     childCount: booking.childCount ?? 0,
     infantCount: booking.infantCount ?? 0,
     petCount: booking.petCount ?? 0,
+    specialRequests: booking.specialRequests ?? null,
     room: { name: booking.roomName, imageUrl: null },
     guests: (booking.guests ?? []).map((guest) => ({
       id: guest.sequence,

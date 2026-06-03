@@ -36,6 +36,8 @@ export const Messages = {
     InvalidGuestCount: "Guest counts cannot be negative.",
     RoomCapacityExceeded:
       "The selected room cannot accommodate the requested number of guests.",
+    MemberProfileLocked:
+      "Contact details are taken from your member account and cannot be changed during booking.",
 
     InvalidGuestName: "Name contains invalid characters.",
 
@@ -107,9 +109,34 @@ export const Messages = {
   
   Payment: {
     TermsRequired: "Please accept the booking terms and conditions.",
+    CardExpired: "Card expiry date must be this month or later.",
     BookingFailed: "Unable to complete booking.",
     SimulationNotice:
       "Payment is simulated for this demo. Card details are validated but not stored.",
+  },
+
+  Confirmation: {
+    LoadFailed: "Unable to load confirmation details for this reservation.",
+  },
+
+  Authorization: {
+    ViewReservationDenied:
+      "You do not have permission to view this reservation.",
+    SignInRequired: "Please sign in to view this reservation.",
+  },
+
+  Reservations: {
+    LoadReservationFailed: "Unable to load reservation.",
+    LoadListFailed: "Unable to load your reservations.",
+    ModifyFailed: "Unable to modify reservation.",
+    CancelFailed: "Unable to cancel reservation.",
+    NotFound: "Unable to locate reservation {referenceNumber}.",
+  },
+
+  ApiClient: {
+    UnexpectedResponse: "Unexpected response from booking API.",
+    InvalidResponse: "Invalid response from booking API.",
+    RoomNotFound: "Room not found.",
   },
 
   Logs: {
@@ -120,3 +147,18 @@ export const Messages = {
     GetBookingSessionFailed: "Get booking session failed.",
   },
 } as const;
+
+export function formatBookingApiStatusError(status: number): string {
+  return `Booking API returned ${status}.`;
+}
+
+export function formatApiUnreachableMessage(apiUrl: string): string {
+  return `Unable to reach the booking API at ${apiUrl}. Start it with: cd backend/Wynn.Booking.Api && dotnet run`;
+}
+
+export function formatReservationNotFoundMessage(referenceNumber: string): string {
+  return Messages.Reservations.NotFound.replace(
+    "{referenceNumber}",
+    referenceNumber
+  );
+}

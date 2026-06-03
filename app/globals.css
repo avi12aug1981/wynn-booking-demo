@@ -159,3 +159,23 @@ body {
 .btn-loader-dots span:nth-child(3) {
   animation-delay: 0.3s;
 }
+
+@media print {
+  body > header,
+  body > footer {
+    display: none !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  #reservation-confirmation {
+    background: #ffffff !important;
+    min-height: auto !important;
+  }
+
+  #reservation-confirmation .lg\:sticky {
+    position: static !important;
+  }
+}

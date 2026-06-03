@@ -63,6 +63,7 @@ try
 
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseMiddleware<ExceptionHandlingMiddleware>();
+    app.UseCors("WynnBookingCors");
     app.UseMiddleware<ApiKeyMiddleware>();
     app.UseMiddleware<RequestCompletionLoggingMiddleware>();
 
@@ -78,8 +79,6 @@ try
             options.RoutePrefix = "swagger";
         });
     }
-
-    app.UseCors("WynnBookingCors");
     app.UseRateLimiter();
     app.MapControllers();
 

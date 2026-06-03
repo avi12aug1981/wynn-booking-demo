@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import RoomCard from "./RoomCard";
 import type { RoomSearchResult } from "@/app/types/room";
+import {
+  formatApiUnreachableMessage,
+  Messages,
+} from "@/app/constants/messages";
+import { bookingApiConfig } from "@/lib/api/booking-api-config";
 import { searchRoomsDotNet } from "@/lib/api/dotnet-booking-client";
 
 type RoomSearchResultsProps = {
@@ -28,18 +33,13 @@ export default function RoomSearchResults({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [bannerMessage, setBannerMessage] = useState("");
 
+  useEffect(() => {
+    setRooms(initialRooms);
+  }, [initialRooms, checkInDate, checkOutDate, guestCount]);
+
   const refreshRooms = useCallback(async () => {
     setIsRefreshing(true);
-
-    const query = new URLSearchParams({
-      checkInDate,
-      checkOutDate,
-      guestCount,
-    });
-
-    if (petsAllowed) query.set("petsAllowed", petsAllowed);
-    if (nonSmoking) query.set("nonSmoking", nonSmoking);
-    if (minRating) query.set("minRating", minRating);
+    setBannerMessage("");
 
     try {
       const result = await searchRoomsDotNet({
@@ -53,7 +53,16 @@ export default function RoomSearchResults({
 
       if (result.ok) {
         setRooms(result.rooms);
+        return;
       }
+
+      setBannerMessage(
+        result.message ?? Messages.RoomSearch.SearchFailed
+      );
+    } catch {
+      setBannerMessage(
+        formatApiUnreachableMessage(bookingApiConfig.dotnetApiUrl)
+      );
     } finally {
       setIsRefreshing(false);
     }

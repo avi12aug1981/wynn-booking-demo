@@ -25,5 +25,13 @@ public sealed class HttpCurrentUserContext(IHttpContextAccessor httpContextAcces
         User?.FindFirstValue(ClaimTypes.Email)
         ?? User?.FindFirstValue(JwtRegisteredClaimNames.Email);
 
+    public string? FirstName =>
+        User?.FindFirstValue(ClaimTypes.GivenName)
+        ?? User?.FindFirstValue(JwtRegisteredClaimNames.GivenName);
+
+    public string? LastName =>
+        User?.FindFirstValue(ClaimTypes.Surname)
+        ?? User?.FindFirstValue(JwtRegisteredClaimNames.FamilyName);
+
     public string? Role => User?.FindFirstValue(ClaimTypes.Role);
 }

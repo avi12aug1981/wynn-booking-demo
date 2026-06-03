@@ -22,12 +22,12 @@ public abstract class ApiControllerBase : ControllerBase
             "API request failed. ApiTraceId={ApiTraceId} StatusCode={StatusCode} Message={Message}",
             TraceId,
             result.StatusCode,
-            result.Message ?? "Request failed.");
+            result.Message ?? ApplicationMessages.Common.RequestFailed);
 
         return StatusCode(
             result.StatusCode,
             ApiResponse<T>.Fail(
-                result.Message ?? "Request failed.",
+                result.Message ?? ApplicationMessages.Common.RequestFailed,
                 result.Errors.Count > 0 ? result.Errors : null,
                 TraceId));
     }

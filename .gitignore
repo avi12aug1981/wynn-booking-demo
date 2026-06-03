@@ -30,8 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — never commit secrets; example template is allowed
+.env
+.env.*
+!.env.example
 
 # .NET build output and local secrets
 **/bin/
@@ -52,9 +54,23 @@ next-env.d.ts
 dev.db
 prisma/dev.db
 
+# Local AI / editor config (not for the repo)
 CLAUDE.md
+claude.md
 .vscode/
 
 # Local application logs
 logs/*.log
 backend/Wynn.Booking.Api/logs/
+
+# Personal / interview-only (keep local; do not push)
+docs/INTERVIEW-QA.md
+docs/PRESENTATION.md
+docs/DEMO-SCRIPT.md
+docs/screenshots/*.png
+docs/screenshots/*.jpg
+docs/screenshots/*.jpeg
+docs/screenshots/*.webp
+
+# Optional local demo overrides (see .env.example)
+app/constants/demo-user.local.ts

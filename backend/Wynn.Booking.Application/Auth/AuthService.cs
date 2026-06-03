@@ -1,7 +1,6 @@
 using Wynn.Booking.Application.Abstractions.Auth;
 using Wynn.Booking.Application.Auth.Dtos;
 using Wynn.Booking.Application.Common;
-
 namespace Wynn.Booking.Application.Auth;
 
 public sealed class AuthService(
@@ -19,7 +18,9 @@ public sealed class AuthService(
         if (user is null)
         {
             return Task.FromResult(
-                ServiceResult<LoginResponseDto>.Fail("Invalid email or password.", 401));
+                ServiceResult<LoginResponseDto>.Fail(
+                    ApplicationMessages.Auth.InvalidCredentials,
+                    401));
         }
 
         var token = jwtTokenGenerator.GenerateToken(user);

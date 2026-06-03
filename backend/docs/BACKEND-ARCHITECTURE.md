@@ -98,8 +98,9 @@ Integration tests use `WebApplicationFactory` against Development config (requir
 - **Login:** `POST /api/auth/login` with `{ "email", "password" }` → `{ accessToken, expiresAtUtc, user }`.
 - **Bearer** scheme on `Authorization` header for member-only writes.
 - **Demo users** in `DemoAuth:Members` (config); production should use Entra ID / identity provider instead.
-- **Ownership:** cancel/modify verify JWT `member_id` matches `Booking.MemberId`, or email matches guest bookings.
-- **Public:** room search, availability, create booking, get booking by reference.
+- **Ownership:** `BookingAuthorization` — manage/history/modify use member id + type + email rules; confirmation GET allows email links without login.
+- **Public:** room search, availability, create booking (guest without JWT), get booking by reference.
+- **Manage:** `GET /api/bookings/{ref}/manage` — JWT member only.
 - **API key** (unchanged): `POST /api/booking-sessions` for Next.js BFF.
 
 ## Cancel and modify reservations

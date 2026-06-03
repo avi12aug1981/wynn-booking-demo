@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Wynn.Booking.Application.Features.Rooms.CheckAvailability;
+using Wynn.Booking.Application.Features.Rooms.GetRoomDetails;
 using Wynn.Booking.Application.Features.Rooms.SearchRooms;
 
 namespace Wynn.Booking.Api.Controllers;
@@ -19,6 +20,20 @@ public sealed class RoomsController(ISender sender) : ApiControllerBase
     {
         var result = await sender.Send(
             new SearchRoomsQuery(checkInDate, checkOutDate, guestCount, petsAllowed, nonSmoking, minRating),
+            cancellationToken);
+
+        return FromServiceResult(result);
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(
+        int id,
+        [FromQuery] string? checkInDate,
+        [FromQuery] string? checkOutDate,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await sender.Send(
+            new GetRoomDetailsQuery(id, checkInDate, checkOutDate),
             cancellationToken);
 
         return FromServiceResult(result);

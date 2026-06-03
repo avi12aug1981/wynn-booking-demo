@@ -135,8 +135,8 @@ async function main() {
 
   const member = await prisma.member.create({
     data: {
-      firstName: "Avadesh",
-      lastName: "Chauhan",
+      firstName: "Demo",
+      lastName: "Member",
       email: "member@demo.com",
       gender: Gender.MALE,
       status: MemberStatus.ACTIVE,
@@ -160,8 +160,8 @@ async function main() {
       roomId: deluxeKing.id,
       memberId: member.id,
       bookingType: BookingType.MEMBER,
-      firstName: "Avadesh",
-      lastName: "Chauhan",
+      firstName: "Demo",
+      lastName: "Member",
       gender: Gender.MALE,
       contactEmail: "member@demo.com",
       adultCount: 2,

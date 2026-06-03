@@ -7,7 +7,14 @@ import { AppRoutes } from "@/app/constants/routes";
 import {
   getMemberProfile,
   isMemberAuthenticated,
+  logoutDemoSession,
+  type DemoMemberProfile,
 } from "@/app/constants/demo-user";
+import {
+  formatApiUnreachableMessage,
+  Messages,
+} from "@/app/constants/messages";
+import { bookingApiConfig } from "@/lib/api/booking-api-config";
 import {
   BOOKING_STATUS_LABELS,
   getMemberBookingsDotNet,
@@ -34,13 +41,17 @@ export default function ReservationHistoryPage() {
   const [bookings, setBookings] = useState<MemberBookingSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const memberProfile = getMemberProfile();
+  const [memberProfile, setMemberProfile] = useState<DemoMemberProfile | null>(
+    null
+  );
 
   useEffect(() => {
     if (!isMemberAuthenticated()) {
       router.replace(AppRoutes.landing);
       return;
     }
+
+    setMemberProfile(getMemberProfile());
 
     async function loadBookings() {
       setIsLoading(true);
@@ -50,9 +61,15 @@ export default function ReservationHistoryPage() {
         const { response, envelope, bookings: items } =
           await getMemberBookingsDotNet();
 
+        if (response.status === 401 || response.status === 403) {
+          logoutDemoSession();
+          router.replace(AppRoutes.landing);
+          return;
+        }
+
         if (!response.ok || !envelope.success) {
           setErrorMessage(
-            envelope.message ?? "Unable to load your reservations."
+            envelope.message ?? Messages.Reservations.LoadListFailed
           );
           setBookings([]);
           return;
@@ -60,7 +77,9 @@ export default function ReservationHistoryPage() {
 
         setBookings(items);
       } catch {
-        setErrorMessage("Unable to load your reservations.");
+        setErrorMessage(
+          formatApiUnreachableMessage(bookingApiConfig.dotnetApiUrl)
+        );
       } finally {
         setIsLoading(false);
       }
@@ -78,10 +97,6 @@ export default function ReservationHistoryPage() {
           </p>
 
           <h1 className="font-serif text-4xl mt-4">Reservation History</h1>
-
-          <p className="text-stone-200 mt-3 max-w-2xl">
-            Reservations created while signed in as a member appear here.
-          </p>
         </div>
       </section>
 
@@ -110,13 +125,7 @@ export default function ReservationHistoryPage() {
           )}
 
           {!isLoading && !errorMessage && bookings.length === 0 && (
-            <div className="px-6 py-10 text-gray-600">
-              <p>No member reservations yet.</p>
-              <p className="text-sm mt-2">
-                Sign in, search for a room, and complete a booking while logged
-                in as a member.
-              </p>
-            </div>
+            <p className="px-6 py-10 text-gray-600">No member reservations yet.</p>
           )}
 
           <div className="divide-y">

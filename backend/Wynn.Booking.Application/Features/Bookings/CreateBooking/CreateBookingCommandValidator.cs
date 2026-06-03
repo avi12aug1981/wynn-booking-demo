@@ -1,5 +1,4 @@
 using FluentValidation;
-using Wynn.Booking.Application.Bookings.Dtos;
 using Wynn.Booking.Application.Common;
 using Wynn.Booking.Application.Common.Validation;
 
@@ -11,7 +10,7 @@ public sealed class CreateBookingCommandValidator : AbstractValidator<CreateBook
     {
         RuleFor(x => x.BookingSessionToken)
             .NotEmpty()
-            .WithMessage("Booking session token is required. Start checkout via POST /api/booking-sessions.");
+            .WithMessage(ApplicationMessages.Validation.BookingSessionTokenRequired);
 
         RuleFor(x => x.RoomId).GreaterThan(0);
         RuleFor(x => x.FirstName).NotEmpty().Must(ValidationRules.IsSafeText);
@@ -21,16 +20,10 @@ public sealed class CreateBookingCommandValidator : AbstractValidator<CreateBook
         RuleFor(x => x.City).NotEmpty();
         RuleFor(x => x.State).NotEmpty();
         RuleFor(x => x.ZipCode).NotEmpty();
-        RuleFor(x => x.CheckInDate).Must(ValidationRules.IsValidDateOnly);
-        RuleFor(x => x.CheckOutDate).Must(ValidationRules.IsValidDateOnly);
-        RuleFor(x => x)
-            .Must(c =>
-            {
-                var checkIn = DateHelpers.ParseDateOnly(c.CheckInDate);
-                var checkOut = DateHelpers.ParseDateOnly(c.CheckOutDate);
-                return checkIn is not null && checkOut is not null && checkOut > checkIn;
-            })
-            .WithMessage("Check-out must be after check-in.");
+        StayDateValidationRules.ApplyRequiredStayDates(
+            this,
+            c => c.CheckInDate,
+            c => c.CheckOutDate);
         RuleFor(x => x.AdultCount).GreaterThanOrEqualTo(1);
         RuleFor(x => x.ChildCount).GreaterThanOrEqualTo(0).When(x => x.ChildCount.HasValue);
         RuleFor(x => x.InfantCount).GreaterThanOrEqualTo(0).When(x => x.InfantCount.HasValue);

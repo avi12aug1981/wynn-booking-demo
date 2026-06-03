@@ -3,26 +3,41 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  getDemoUserType,
-  getMemberProfile,
-  isMemberAuthenticated,
   logoutDemoSession,
 } from "@/app/constants/demo-user";
 import { AppRoutes } from "@/app/constants/routes";
+import { useDemoSession } from "@/app/hooks/useDemoSession";
+import MyReservationsLink from "@/components/ui/molecules/MyReservationsLink";
 
 const LOGIN_PATHS = new Set(["/", "/login"]);
+const SEARCH_PATH = AppRoutes.search;
+const CONFIRMATION_PATH = "/confirmation";
+
+const topBarActionClassName =
+  "rounded-sm border border-[#c9b38c] px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#c9b38c] hover:bg-[#2b1a11] hover:text-white";
+
+function pathMatchesRoute(pathname: string, route: string) {
+  const normalizedPath = pathname.toLowerCase();
+  const normalizedRoute = route.toLowerCase();
+
+  return (
+    normalizedPath === normalizedRoute ||
+    normalizedPath.startsWith(`${normalizedRoute}/`)
+  );
+}
 
 export default function AppTopBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { sessionReady, userType, memberProfile, isMember } = useDemoSession();
 
   if (LOGIN_PATHS.has(pathname)) {
     return null;
   }
 
-  const userType = getDemoUserType();
-  const memberProfile = getMemberProfile();
-  const isMember = isMemberAuthenticated();
+  const isConfirmationPage = pathMatchesRoute(pathname, CONFIRMATION_PATH);
+  const showSignIn =
+    sessionReady && !isMember && !isConfirmationPage;
 
   function handleLogout() {
     logoutDemoSession();
@@ -33,40 +48,43 @@ export default function AppTopBar() {
     <header className="bg-[#3a2418] text-white border-b border-[#2b1a11]">
       <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4 text-sm">
-          <Link
-            href={AppRoutes.search}
-            className="uppercase tracking-widest text-[#c9b38c] hover:text-white"
-          >
-            Search
-          </Link>
-
-          {isMember && (
+          {!pathMatchesRoute(pathname, SEARCH_PATH) && (
             <Link
-              href={AppRoutes.reservations}
-              className="uppercase tracking-widest text-stone-200 hover:text-white"
+              href={SEARCH_PATH}
+              className="uppercase tracking-widest text-[#c9b38c] hover:text-white"
             >
-              My Reservations
+              Search
             </Link>
           )}
+
+          <MyReservationsLink />
         </div>
 
-        <div className="flex items-center gap-4 text-sm">
-          {isMember && memberProfile ? (
+        <div className="flex items-center gap-4 text-sm min-h-[28px]">
+          {sessionReady && isMember && memberProfile ? (
             <span className="text-stone-200">
               {memberProfile.firstName} {memberProfile.lastName}
               <span className="text-[#c9b38c] ml-2">{memberProfile.tier}</span>
             </span>
-          ) : userType === "GUEST" ? (
+          ) : sessionReady && userType === "GUEST" && !isConfirmationPage ? (
             <span className="text-stone-300">Guest</span>
           ) : null}
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="rounded-sm border border-[#c9b38c] px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#c9b38c] hover:bg-[#2b1a11] hover:text-white"
-          >
-            Logout
-          </button>
+          {showSignIn && (
+            <Link href={AppRoutes.login} className={topBarActionClassName}>
+              Sign In
+            </Link>
+          )}
+
+          {sessionReady && isMember && (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className={topBarActionClassName}
+            >
+              Logout
+            </button>
+          )}
         </div>
       </div>
     </header>

@@ -3,6 +3,8 @@ import BookNowButton from "@/features/booking/components/BookNowButton";
 import { Ban, CheckCircle, PawPrint, Star, Users } from "lucide-react";
 import { getAmenityIcon } from "@/app/lib/amenity-icons";
 import Link from "next/link";
+import { buildRoomDetailsStartUrl } from "@/app/constants/routes";
+import { areStayDatesValid } from "@/app/lib/utils/date";
 
 type RoomCardProps = {
   checkInDate?: string;
@@ -34,6 +36,12 @@ export default function RoomCard({
   guestCount,
   onUnavailable,
 }: RoomCardProps) {
+  const canOpenDetails =
+    checkInDate &&
+    checkOutDate &&
+    guestCount &&
+    areStayDatesValid(checkInDate, checkOutDate);
+
   return (
     <div className="bg-white rounded-sm shadow-md overflow-hidden border border-gray-200 flex flex-col h-full">
        <Image
@@ -104,19 +112,23 @@ export default function RoomCard({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Link
-              href={{
-                pathname: `/rooms/${room.id}`,
-                query: {
-                  checkInDate,
-                  checkOutDate,
-                  guestCount,
-                },
-              }}
-              className="text-center border border-[#3a2418] text-[#3a2418] px-4 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold hover:bg-stone-50"
-            >
-              Details
-            </Link>
+            {canOpenDetails ? (
+              <a
+                href={buildRoomDetailsStartUrl({
+                  roomId: room.id,
+                  checkInDate: checkInDate!,
+                  checkOutDate: checkOutDate!,
+                  guestCount: guestCount!,
+                })}
+                className="text-center border border-[#3a2418] text-[#3a2418] px-4 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold hover:bg-stone-50"
+              >
+                Details
+              </a>
+            ) : (
+              <span className="text-center border border-stone-200 text-stone-400 px-4 py-3 rounded-sm uppercase tracking-widest text-sm font-semibold cursor-not-allowed">
+                Details
+              </span>
+            )}
 
             <BookNowButton
               roomId={room.id}

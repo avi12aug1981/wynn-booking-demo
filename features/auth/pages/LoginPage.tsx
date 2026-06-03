@@ -121,22 +121,7 @@ export default function LoginPage({ searchParams = {} }: LoginPageProps) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white border rounded-sm shadow-md p-6 space-y-4">
-            <h2 className="font-serif text-3xl text-[#3a2418]">
-              Guest Booking
-            </h2>
-
-            <p className="text-gray-600">
-              Book without signing in. Guest details are entered during
-              checkout.
-            </p>
-
-            <AppButton type="button" fullWidth onClick={continueAsGuest}>
-              Continue as Guest
-            </AppButton>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">      
           <div className="bg-white border rounded-sm shadow-md p-6 space-y-4">
             <h2 className="font-serif text-3xl text-[#3a2418]">
               Member Sign In
@@ -197,6 +182,20 @@ export default function LoginPage({ searchParams = {} }: LoginPageProps) {
                 {isSubmitting ? "Signing In…" : "Sign In"}
               </AppButton>
             </form>
+          </div>
+          <div className="bg-white border rounded-sm shadow-md p-6 space-y-4">
+            <h2 className="font-serif text-3xl text-[#3a2418]">
+              Guest Booking
+            </h2>
+
+            <p className="text-gray-600">
+              Book without signing in. Guest details are entered during
+              checkout.
+            </p>
+
+            <AppButton type="button" fullWidth onClick={continueAsGuest}>
+              Continue as Guest
+            </AppButton>
           </div>
         </div>
       </section>

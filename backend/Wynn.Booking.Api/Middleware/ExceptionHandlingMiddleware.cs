@@ -36,13 +36,13 @@ public sealed class ExceptionHandlingMiddleware(
             DomainException domain => (domain.StatusCode, domain.Message, null),
             JsonException json => (
                 StatusCodes.Status400BadRequest,
-                "The request body contains invalid JSON.",
+                ApplicationMessages.Common.InvalidJsonBody,
                 new[] { json.Message } as IReadOnlyList<string>),
             BadHttpRequestException badRequest => (
                 StatusCodes.Status400BadRequest,
-                "The request body is invalid.",
+                ApplicationMessages.Common.InvalidRequestBody,
                 new[] { badRequest.Message } as IReadOnlyList<string>),
-            _ => (500, "An unexpected error occurred. Please try again later.", null),
+            _ => (500, ApplicationMessages.Common.UnexpectedError, null),
         };
 
         if (statusCode >= 500)

@@ -20,7 +20,7 @@ public sealed class WynnBookingApiFactory : WebApplicationFactory<Program>
                 ["DemoAuth:Members:0:MemberId"] = "1",
                 ["DemoAuth:Members:0:Email"] = "demo.member@wynn.local",
                 ["DemoAuth:Members:0:Password"] = "demo.member",
-                ["DemoAuth:Members:0:FirstName"] = "Avadesh",
+                ["DemoAuth:Members:0:FirstName"] = "Demo",
                 ["DemoAuth:Members:0:LastName"] = "Demo Member",
                 ["DemoAuth:Members:0:Tier"] = "Gold",
                 ["ApiSecurity:InternalApiKey"] = "wynn-demo-2026",

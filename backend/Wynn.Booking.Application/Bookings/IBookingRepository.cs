@@ -40,4 +40,8 @@ public interface IBookingRepository
     Task<BookingEntity> ModifyBookingAsync(
         BookingEntity booking,
         CancellationToken cancellationToken = default);
+
+    Task MarkConfirmationEmailSentAsync(
+        int bookingId,
+        CancellationToken cancellationToken = default);
 }

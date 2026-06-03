@@ -74,10 +74,12 @@ dotnet run
 |--------|------|------|
 | POST | `/api/auth/login` | None — returns JWT |
 
-**Demo member** (matches React `demo.member@wynn.local`):
+**Demo member** (matches React `app/constants/demo-user.ts` and `DemoAuth` in appsettings):
 
 - Email: `demo.member@wynn.local`
 - Password: `demo.member`
+
+Override locally via `appsettings.Development.json` and `NEXT_PUBLIC_DEMO_MEMBER_*` in `.env` (never commit real addresses or SMTP passwords).
 
 Use the token on protected routes:
 
@@ -90,7 +92,8 @@ Authorization: Bearer <accessToken>
 | POST | `/api/booking-sessions` | `x-api-key` (BFF / server) |
 | POST | `/api/bookings` | **Requires `bookingSessionToken`**; optional JWT for member |
 | GET | `/api/bookings/me` | JWT **Member** (reservation history) |
-| GET | `/api/bookings/{ref}` | None (confirmation page) |
+| GET | `/api/bookings/{ref}` | Confirmation lookup; email links work without login (auth rules when signed in) |
+| GET | `/api/bookings/{ref}/manage` | JWT **Member** — My Reservations detail |
 | PATCH | `/api/bookings/{ref}` | JWT **Member** |
 | POST | `/api/bookings/{ref}/cancel` | JWT **Member** |
 
@@ -124,9 +127,13 @@ Business failures (e.g. session mismatch) log: `API request failed. ApiTraceId=.
 | POST | `/api/booking-sessions` | Start checkout session |
 | GET | `/api/booking-sessions/{token}` | Load session + room |
 | POST | `/api/bookings` | Create booking (Serializable transaction) |
-| GET | `/api/bookings/{referenceNumber}` | Booking details |
+| GET | `/api/rooms/{id}` | Room details |
+| GET | `/api/bookings/{referenceNumber}` | Booking details (confirmation) |
+| GET | `/api/bookings/{referenceNumber}/manage` | Member manage view |
 | PATCH | `/api/bookings/{referenceNumber}` | Modify reservation (dates, guests, contact) |
 | POST | `/api/bookings/{referenceNumber}/cancel` | Cancel reservation (before check-in) |
+
+**Webhook:** not implemented — see [../docs/API-REFERENCE.md](../docs/API-REFERENCE.md).
 
 All responses use the same envelope as the Next app: `{ success, data?, message?, errors?, traceId? }`.
 

@@ -1,45 +1,97 @@
 # Architecture Overview
 
+## Purpose
+
+Wynn Booking Demo is a full-stack hotel reservation proof of concept for senior .NET full-stack interviews. It demonstrates luxury search, tokenized checkout, guest and member journeys, inventory rules, JWT authorization, and operational patterns suitable for Azure deployment.
+
+## System Context
+
+```text
+┌──────────────┐     HTTPS (JSON)      ┌─────────────────────────┐
+│   Browser    │ ◄──────────────────► │  Next.js 16 (port 3000) │
+│              │                      │  Page Gateway + Features │
+└──────────────┘                      └───────────┬─────────────┘
+                                                  │
+                                    NEXT_PUBLIC_BOOKING_API_URL
+                                                  │
+                                      ┌───────────▼─────────────┐
+                                      │  ASP.NET Core 9 API     │
+                                      │  (port 5116, Swagger)   │
+                                      │  MediatR + EF Core        │
+                                      └───────────┬─────────────┘
+                                                  │
+                                      ┌───────────▼─────────────┐
+                                      │  Azure SQL / SQL Server │
+                                      └─────────────────────────┘
+```
+
+The **primary booking path** is Next.js UI → .NET API → Azure SQL. Legacy Prisma/SQLite routes may exist for earlier POC code; interview demos should use the .NET API.
+
 ## Technology Stack
 
-- Next.js 15
-- TypeScript
-- Prisma ORM
-- SQLite
-- Tailwind CSS
+| Layer | Technology |
+|-------|------------|
+| UI | Next.js 16, React 19, TypeScript, Tailwind CSS |
+| API | ASP.NET Core 9, MediatR, FluentValidation, Serilog |
+| Data | EF Core 9, Azure SQL (demo/prod), migrations + seed |
+| Auth | JWT (demo members), API key on session create |
+| Email | MailKit SMTP (optional, Gmail app password in dev) |
 
-## Architectural Patterns
+## Frontend Architecture
 
-- Service Layer Pattern
-- Repository Pattern
-- Atomic Design Pattern
-- Dependency Inversion Principle
-- Centralized Logging
-- API Security Middleware
-- Transactional Booking Pattern
+- **Page Gateway** (`app/[[...segments]]/page.tsx`) — single catch-all entry; routes registered in `features/app-router/page-gateway.tsx`.
+- **Feature modules** — `rooms`, `booking`, `confirmation`, `auth`, `reservations` own pages and components.
+- **Atomic UI** — `components/ui/atoms|molecules|organisms`.
+- **API client** — `lib/api/dotnet-booking-client.ts` with envelope parsing and safe fetch when API is down.
+- **Session** — `sessionStorage` for guest vs member mode and JWT (demo).
 
-## Design Goals
+## Backend Architecture
 
-- Extensibility
-- Maintainability
-- Reusability
-- Testability
-- Scalability
+Clean architecture with vertical slices:
 
-## Booking Flow
+- **Api** — controllers, middleware (correlation ID, exceptions, API key), JWT, rate limits, Swagger (non-production).
+- **Application** — commands/queries, validators, `BookingService`, `RoomSearchService`, `BookingAuthorization`.
+- **Domain** — entities, enums, domain exceptions.
+- **Infrastructure** — EF repositories, SMTP notifier, email builder.
 
-Search Rooms
-→ Room Details
-→ Booking Session Creation
-→ Checkout
-→ Final Availability Validation
-→ Transaction Commit
-→ Confirmation
+See [../backend/docs/BACKEND-ARCHITECTURE.md](../backend/docs/BACKEND-ARCHITECTURE.md) for pipeline and inventory details.
 
-## Concurrency Strategy
+## Core Domain Concepts
 
-Availability is revalidated inside a database transaction before booking creation.
+| Concept | Description |
+|---------|-------------|
+| **Booking session** (`BSN_*` token) | Short-lived checkout context; does **not** hold inventory. |
+| **Booking** (`WYNN-*` reference) | Confirmed reservation; only source of inventory lock. |
+| **Guest booking** | `BookingType.Guest`, no `MemberId`; confirmation by reference URL. |
+| **Member booking** | `BookingType.Member`, `MemberId` from JWT; history/modify/cancel require sign-in. |
 
-First successful transaction wins.
+## Key User Flows
 
-Subsequent requests receive a Room Not Available response.
+### Guest
+
+```text
+Login → Continue as Guest → Search → Room Details (/rooms/{id}/{token})
+→ Booking (/booking/{token}) → Confirmation (/confirmation/{ref})
+```
+
+### Member
+
+```text
+Sign In (JWT) → Search → Book (locked profile) → Confirmation
+→ My Reservations → View / Modify / Cancel
+```
+
+## Cross-Cutting Concerns
+
+- **Messages** — `app/constants/messages.ts` (UI) and `ApplicationMessages.cs` (API).
+- **Authorization** — `BookingAuthorization.cs` separates confirmation view vs manage vs modify/cancel.
+- **Availability** — overlap query on confirmed bookings inside serializable create transaction.
+- **Observability** — structured logs, `traceId` on API envelope, file logs under `backend/Wynn.Booking.Api/logs/`.
+
+## Related Documents
+
+- [TECHNICAL-DESIGN.md](./TECHNICAL-DESIGN.md)
+- [SECURITY.md](./SECURITY.md)
+- [AVAILABILITY-RULES.md](./AVAILABILITY-RULES.md)
+- [FolderStructure.md](./FolderStructure.md)
+- [API-REFERENCE.md](./API-REFERENCE.md)

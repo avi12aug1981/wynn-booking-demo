@@ -66,3 +66,49 @@ export function todayDateInputValue(): string {
 
   return `${year}-${month}-${day}`;
 }
+
+export function addDaysToDateInputValue(dateInputValue: string, days: number) {
+  const date = parseLocalDate(dateInputValue);
+
+  if (!date) {
+    return todayDateInputValue();
+  }
+
+  date.setDate(date.getDate() + days);
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+/** Ensures defaults are today+ for check-in and check-out after check-in. */
+export function clampStayDateDefaults(checkIn?: string, checkOut?: string) {
+  const today = todayDateInputValue();
+  const resolvedCheckIn =
+    checkIn && isValidDateString(checkIn) && !isBeforeToday(checkIn)
+      ? checkIn
+      : today;
+  const resolvedCheckOut =
+    checkOut &&
+    isValidDateString(checkOut) &&
+    !isBeforeToday(checkOut) &&
+    isCheckOutAfterCheckIn(resolvedCheckIn, checkOut)
+      ? checkOut
+      : addDaysToDateInputValue(resolvedCheckIn, 2);
+
+  return {
+    checkInDate: resolvedCheckIn,
+    checkOutDate: resolvedCheckOut,
+  };
+}
+
+export function areStayDatesValid(checkIn: string, checkOut: string) {
+  return (
+    isValidDateString(checkIn) &&
+    isValidDateString(checkOut) &&
+    !isBeforeToday(checkIn) &&
+    isCheckOutAfterCheckIn(checkIn, checkOut)
+  );
+}

@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import { hasBookingQueryParams } from "@/app/lib/booking-query-params";
 import { ApplicationConstants } from "@/app/constants";
+import { buildBookingUrl } from "@/app/constants/routes";
 import { BookingErrors } from "@/app/constants/booking-errors";
 import { buildLoginUrl } from "@/app/constants/routes";
 import BookingForm from "@/features/booking/components/BookingForm";
@@ -23,8 +25,15 @@ function calculateNumberOfNights(checkInDate: string, checkOutDate: string) {
   );
 }
 
-export default async function BookingPage({ routeParams }: BookingPageProps) {
+export default async function BookingPage({
+  routeParams,
+  searchParams,
+}: BookingPageProps) {
   const { token } = routeParams;
+
+  if (hasBookingQueryParams(searchParams)) {
+    redirect(buildBookingUrl(token));
+  }
 
   const { response, envelope } = await getBookingSessionDotNet(token);
 

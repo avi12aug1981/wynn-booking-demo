@@ -1,4 +1,5 @@
 using FluentValidation;
+using Wynn.Booking.Application.Common;
 using Wynn.Booking.Application.Common.Validation;
 
 namespace Wynn.Booking.Application.Features.Bookings.ModifyBooking;
@@ -19,17 +20,35 @@ public sealed class ModifyBookingCommandValidator : AbstractValidator<ModifyBook
                 r.PetCount is not null ||
                 r.SpecialRequests is not null ||
                 r.ContactEmail is not null)
-            .WithMessage("At least one field must be provided to modify the reservation.");
+            .WithMessage(ApplicationMessages.Validation.ModifyFieldRequired);
 
         When(x => x.Request.CheckInDate is not null, () =>
         {
-            RuleFor(x => x.Request.CheckInDate!).Must(ValidationRules.IsValidDateOnly);
+            RuleFor(x => x.Request.CheckInDate!)
+                .Must(ValidationRules.IsValidDateOnly)
+                .Must(ValidationRules.IsTodayOrFutureDateOnly)
+                .WithMessage(StayDateValidationRules.CheckInPastMessage);
         });
 
         When(x => x.Request.CheckOutDate is not null, () =>
         {
-            RuleFor(x => x.Request.CheckOutDate!).Must(ValidationRules.IsValidDateOnly);
+            RuleFor(x => x.Request.CheckOutDate!)
+                .Must(ValidationRules.IsValidDateOnly);
         });
+
+        When(
+            x => x.Request.CheckInDate is not null && x.Request.CheckOutDate is not null,
+            () =>
+            {
+                RuleFor(x => x)
+                    .Must(command =>
+                    {
+                        var checkIn = DateHelpers.ParseDateOnly(command.Request.CheckInDate!);
+                        var checkOut = DateHelpers.ParseDateOnly(command.Request.CheckOutDate!);
+                        return checkIn is not null && checkOut is not null && checkOut > checkIn;
+                    })
+                    .WithMessage(StayDateValidationRules.CheckOutAfterCheckInMessage);
+            });
 
         When(x => x.Request.ContactEmail is not null, () =>
         {

@@ -8,7 +8,10 @@ public sealed class CheckRoomAvailabilityQueryValidator : AbstractValidator<Chec
     public CheckRoomAvailabilityQueryValidator()
     {
         RuleFor(x => x.RoomId).GreaterThan(0);
-        RuleFor(x => x.CheckInDate).Must(ValidationRules.IsValidDateOnly);
-        RuleFor(x => x.CheckOutDate).Must(ValidationRules.IsValidDateOnly);
+
+        StayDateValidationRules.ApplyRequiredStayDates(
+            this,
+            q => q.CheckInDate,
+            q => q.CheckOutDate);
     }
 }

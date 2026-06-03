@@ -13,6 +13,11 @@ public static partial class ValidationRules
     public static bool IsValidDateOnly(string value) =>
         DateOnly.TryParse(value, out _);
 
+    /// <summary>Date must be today (UTC) or later.</summary>
+    public static bool IsTodayOrFutureDateOnly(string value) =>
+        DateOnly.TryParse(value, out var date) &&
+        date >= DateOnly.FromDateTime(DateTime.UtcNow);
+
     [GeneratedRegex(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.CultureInvariant)]
     private static partial Regex EmailRegex();
 

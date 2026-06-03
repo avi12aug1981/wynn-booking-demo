@@ -45,7 +45,10 @@ import type {
         continue;
       }
   
-      if (patternPart !== pathPart) {
+      if (
+        patternPart !== pathPart &&
+        patternPart.toLowerCase() !== pathPart.toLowerCase()
+      ) {
         return {
           matched: false,
           routeParams: {},

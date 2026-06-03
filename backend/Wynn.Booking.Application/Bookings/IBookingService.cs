@@ -13,6 +13,10 @@ public interface IBookingService
         string referenceNumber,
         CancellationToken cancellationToken = default);
 
+    Task<ServiceResult<object>> GetByReferenceForManageAsync(
+        string referenceNumber,
+        CancellationToken cancellationToken = default);
+
     Task<ServiceResult<MemberBookingsResponseDto>> ListByCurrentMemberAsync(
         CancellationToken cancellationToken = default);
 

@@ -2,6 +2,7 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Wynn.Booking.Application.BookingSessions;
 using Wynn.Booking.Application.Bookings;
+using Wynn.Booking.Application.Common;
 using Wynn.Booking.Domain.Enums;
 using Wynn.Booking.Domain.Exceptions;
 using Wynn.Booking.Infrastructure.Persistence;
@@ -57,7 +58,9 @@ public sealed class BookingRepository(
         await dbContext.Bookings
             .AsNoTracking()
             .Include(booking => booking.Room)
-            .Where(booking => booking.MemberId == memberId)
+            .Where(booking =>
+                booking.MemberId == memberId &&
+                booking.BookingType == BookingType.Member)
             .OrderByDescending(booking => booking.CheckInDate)
             .ToListAsync(cancellationToken);
 
@@ -75,7 +78,7 @@ public sealed class BookingRepository(
                         excludeBookingId: null,
                         ct))
                 {
-                    throw new ConflictException("This room is no longer available for the selected dates.");
+                    throw new ConflictException(ApplicationMessages.Room.UnavailableForDates);
                 }
 
                 dbContext.Bookings.Add(booking);
@@ -117,6 +120,19 @@ public sealed class BookingRepository(
             },
             cancellationToken);
 
+    public async Task MarkConfirmationEmailSentAsync(
+        int bookingId,
+        CancellationToken cancellationToken = default)
+    {
+        var booking = await dbContext.Bookings.FirstAsync(
+            entry => entry.Id == bookingId,
+            cancellationToken);
+
+        booking.ConfirmationEmailSent = true;
+        booking.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public Task<BookingEntity> ModifyBookingAsync(
         BookingEntity booking,
         CancellationToken cancellationToken = default) =>
@@ -131,7 +147,7 @@ public sealed class BookingRepository(
                         ct))
                 {
                     throw new ConflictException(
-                        "This room is not available for the requested modification dates.");
+                        ApplicationMessages.Room.UnavailableForModificationDates);
                 }
 
                 booking.UpdatedAt = DateTime.UtcNow;

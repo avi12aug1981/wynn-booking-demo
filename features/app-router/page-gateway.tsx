@@ -3,6 +3,7 @@ import type { PageRouteContext, RegisteredPageRoute } from "./route-types";
 import { createPageRouteRegistry } from "./page-route-registry";
 import RoomsSearchPage from "@/features/rooms/pages/RoomsSearchPage";
 import RoomDetailsPage from "@/features/rooms/pages/RoomDetailsPage";
+import RoomDetailsWithoutTokenPage from "@/features/rooms/pages/RoomDetailsWithoutTokenPage";
 import BookingPage from "@/features/booking/pages/BookingPage";
 import ConfirmationPage from "@/features/confirmation/pages/ConfirmationPage";
 import LoginPage from "@/features/auth/pages/LoginPage";
@@ -30,8 +31,12 @@ const pageRoutes: RegisteredPageRoute[] = [
     handler: (context) => <RoomsSearchPage {...context} />,
   },
   {
-    pattern: "/rooms/:roomId",
+    pattern: "/rooms/:roomId/:token",
     handler: (context) => <RoomDetailsPage {...context} />,
+  },
+  {
+    pattern: "/rooms/:roomId",
+    handler: (context) => <RoomDetailsWithoutTokenPage {...context} />,
   },
   {
     pattern: "/booking/:token",

@@ -9,6 +9,39 @@ public sealed class ApiEndpointTests(WynnBookingApiFactory factory) : IClassFixt
     private readonly HttpClient _client = factory.CreateClient();
 
     [Fact]
+    public async Task SearchRooms_WithPastCheckIn_ReturnsBadRequest()
+    {
+        var response = await _client.GetAsync(
+            "/api/rooms?checkInDate=2020-01-01&checkOutDate=2020-01-03&guestCount=2");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var json = await response.Content.ReadFromJsonAsync<ApiEnvelope<object>>();
+        Assert.NotNull(json);
+        Assert.False(json!.Success);
+    }
+
+    [Fact]
+    public async Task CreateBookingSession_WithPastCheckIn_ReturnsBadRequest()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/booking-sessions")
+        {
+            Content = JsonContent.Create(new
+            {
+                roomId = 1,
+                checkInDate = "2019-06-01",
+                checkOutDate = "2019-06-03",
+                guestCount = 2,
+            }),
+        };
+        request.Headers.Add("x-api-key", "wynn-demo-2026");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task SearchRooms_ReturnsSuccessEnvelope()
     {
         var response = await _client.GetAsync(
@@ -55,6 +88,33 @@ public sealed class ApiEndpointTests(WynnBookingApiFactory factory) : IClassFixt
             new { email = "demo.member@wynn.local", password = "wrong-password" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMemberBookings_WithValidToken_ReturnsSuccessEnvelope()
+    {
+        var loginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = "demo.member@wynn.local", password = "demo.member" });
+
+        var loginJson = await loginResponse.Content.ReadFromJsonAsync<ApiEnvelope<LoginData>>();
+        Assert.NotNull(loginJson?.Data?.AccessToken);
+        Assert.False(string.IsNullOrWhiteSpace(loginJson!.Data!.AccessToken));
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/Bookings/me");
+        request.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue(
+                "Bearer",
+                loginJson!.Data!.AccessToken);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var json = await response.Content.ReadFromJsonAsync<ApiEnvelope<MemberBookingsData>>();
+        Assert.NotNull(json);
+        Assert.True(json!.Success);
+        Assert.NotNull(json.Data?.Bookings);
     }
 
     [Fact]
@@ -162,5 +222,10 @@ public sealed class ApiEndpointTests(WynnBookingApiFactory factory) : IClassFixt
     private sealed class LoginData
     {
         public string? AccessToken { get; init; }
+    }
+
+    private sealed class MemberBookingsData
+    {
+        public object[]? Bookings { get; init; }
     }
 }
