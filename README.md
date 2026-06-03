@@ -109,11 +109,7 @@ npm install
 npm run dev
 ```
 
-Application:
-
-```text
-http://localhost:3000
-```
+UI URL: [`config/development.defaults.json`](config/development.defaults.json) → `urls.appBase` (override with `NEXT_PUBLIC_APP_URL` in `.env`).
 
 ### Backend API
 
@@ -122,11 +118,7 @@ cd backend/Wynn.Booking.Api
 dotnet run
 ```
 
-Swagger:
-
-```text
-http://localhost:5116/swagger/index.html
-```
+Swagger: `urls.bookingApi` + `/swagger` in [`config/development.defaults.json`](config/development.defaults.json).
 
 ---
 

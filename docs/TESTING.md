@@ -56,7 +56,7 @@ Tests require reachable SQL per `appsettings.Development.json` or factory overri
 No automated E2E suite in repo; recommended manual pass before interview:
 
 1. `npm run dev` + `dotnet run`
-2. `.env` with `NEXT_PUBLIC_BOOKING_API_URL=http://localhost:5116` (see `.env.example`)
+2. `.env` optional — URL defaults in `config/development.defaults.json` (see `.env.example`)
 3. Full guest + member flows above
 
 Optional additions: Playwright for smoke, Vitest for date/auth helpers.
@@ -65,7 +65,7 @@ Optional additions: Playwright for smoke, Vitest for date/auth helpers.
 
 ```bash
 # API log grep
-grep "ApiTraceId=YOUR_TRACE" backend/Wynn.Booking.Api/logs/wynn-booking-api-*.log
+grep "YOUR_TRACE" logs/wynn-booking-audit.jsonl
 
 # Build
 cd backend/Wynn.Booking.Api && dotnet build

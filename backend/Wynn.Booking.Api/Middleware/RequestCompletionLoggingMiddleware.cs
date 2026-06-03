@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using Serilog;
+using Wynn.Booking.Api.Authentication;
 using Wynn.Booking.Api.Extensions;
 
 namespace Wynn.Booking.Api.Middleware;
@@ -14,11 +16,21 @@ public sealed class RequestCompletionLoggingMiddleware(RequestDelegate next)
 
         var traceId = context.GetTraceId();
 
+        var operation = context.Items.TryGetValue(HttpContextExtensions.ClientOperationItemKey, out var op)
+            ? op as string
+            : null;
+
+        var memberId = context.User.FindFirstValue(JwtClaimTypes.MemberId);
+        var memberEmail = context.User.FindFirstValue(ClaimTypes.Email);
+
         Log.Information(
-            "HTTP {Method} {Path} -> {StatusCode} ApiTraceId={ApiTraceId}",
+            "HTTP {Method} {Path} -> {StatusCode} Operation={Operation} MemberId={MemberId} MemberEmail={MemberEmail} ApiTraceId={ApiTraceId}",
             context.Request.Method,
             context.Request.Path.Value,
             context.Response.StatusCode,
+            operation,
+            memberId,
+            memberEmail,
             traceId);
     }
 }

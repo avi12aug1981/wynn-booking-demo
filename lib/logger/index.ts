@@ -1,7 +1,7 @@
-import fs from "fs";
-import path from "path";
+import type { AuditLogLevel } from "@/lib/logging/audit-event";
+import { appendAuditEvent } from "@/lib/logging/append-audit-server";
 
-export type LogLevel = "debug" | "info" | "warn" | "error";
+export type LogLevel = AuditLogLevel;
 
 export type LogContext = Record<string, unknown>;
 
@@ -17,26 +17,17 @@ export interface LoggerProvider {
   write(entry: LogEntry): void;
 }
 
-/**
- * File-based logger provider.
- *
- * This provider writes structured application events to a local file.
- * Business services remain independent from the logging destination.
- */
+/** Legacy Next.js API routes → same unified audit file as the UI and .NET API. */
 class FileLoggerProvider implements LoggerProvider {
-  private readonly logDirectory = path.join(process.cwd(), "logs");
-  private readonly logFilePath = path.join(
-    this.logDirectory,
-    "application.log"
-  );
-
   write(entry: LogEntry): void {
-    if (!fs.existsSync(this.logDirectory)) {
-      fs.mkdirSync(this.logDirectory, { recursive: true });
-    }
-
-    fs.appendFileSync(this.logFilePath, `${JSON.stringify(entry)}\n`, {
-      encoding: "utf-8",
+    appendAuditEvent({
+      timestamp: entry.timestamp,
+      level: entry.level,
+      layer: "UI",
+      traceId: "next-server",
+      message: entry.message,
+      operation: entry.source,
+      details: entry.context,
     });
   }
 }

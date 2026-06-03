@@ -7,6 +7,7 @@ import {
   Messages,
 } from "@/app/constants/messages";
 import { bookingApiConfig } from "@/lib/api/booking-api-config";
+import { auditApiFetch } from "@/lib/logging/audit-api-fetch";
 
 export type ApiEnvelope<T> = {
   success: boolean;
@@ -84,14 +85,11 @@ function dotnetUrl(path: string) {
 }
 
 async function dotnetFetch(
+  operation: string,
   input: string,
   init?: RequestInit
 ): Promise<Response | null> {
-  try {
-    return await fetch(input, init);
-  } catch {
-    return null;
-  }
+  return auditApiFetch(operation, input, init);
 }
 
 function unreachableEnvelope<T>(): ApiEnvelope<T> {
@@ -191,12 +189,23 @@ function mapRoom(room: DotNetRoom): RoomSearchResult {
 }
 
 export async function loginDotNet(email: string, password: string) {
-  const response = await fetch(dotnetUrl("/api/auth/login"), {
+  const response = await auditApiFetch("auth.login", dotnetUrl("/api/auth/login"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
     cache: "no-store",
   });
+
+  if (!response) {
+    return {
+      response: new Response(null, { status: 503 }),
+      envelope: unreachableEnvelope<{
+        accessToken: string;
+        expiresAtUtc: string;
+        user: DemoMemberProfile;
+      }>(),
+    };
+  }
 
   const envelope = await parseEnvelope<{
     accessToken: string;
@@ -208,10 +217,22 @@ export async function loginDotNet(email: string, password: string) {
 }
 
 export async function getMemberBookingsDotNet() {
-  const response = await fetch(dotnetUrl("/api/Bookings/me"), {
-    headers: memberAuthHeaders(),
-    cache: "no-store",
-  });
+  const response = await dotnetFetch(
+    "bookings.listMine",
+    dotnetUrl("/api/Bookings/me"),
+    {
+      headers: memberAuthHeaders(),
+      cache: "no-store",
+    }
+  );
+
+  if (!response) {
+    return {
+      response: new Response(null, { status: 503 }),
+      envelope: unreachableEnvelope<{ bookings: MemberBookingSummary[] }>(),
+      bookings: [] as MemberBookingSummary[],
+    };
+  }
 
   const envelope = await parseEnvelope<{ bookings: MemberBookingSummary[] }>(
     response
@@ -237,6 +258,7 @@ export async function getMemberBookingsDotNet() {
 
 export async function getBookingByReferenceDotNet(referenceNumber: string) {
   const response = await dotnetFetch(
+    "bookings.getByReference",
     dotnetUrl(`/api/Bookings/${encodeURIComponent(referenceNumber)}`),
     {
       headers: memberAuthHeaders(),
@@ -259,6 +281,7 @@ export async function getBookingByReferenceDotNet(referenceNumber: string) {
 /** Member-only reservation detail for /reservations/* (not guest confirmations). */
 export async function getMemberBookingForManageDotNet(referenceNumber: string) {
   const response = await dotnetFetch(
+    "bookings.getForManage",
     dotnetUrl(
       `/api/Bookings/${encodeURIComponent(referenceNumber)}/manage`
     ),
@@ -284,7 +307,8 @@ export async function cancelBookingDotNet(
   referenceNumber: string,
   cancellationReason?: string
 ) {
-  const response = await fetch(
+  const response = await dotnetFetch(
+    "bookings.cancel",
     dotnetUrl(`/api/Bookings/${encodeURIComponent(referenceNumber)}/cancel`),
     {
       method: "POST",
@@ -293,6 +317,13 @@ export async function cancelBookingDotNet(
       cache: "no-store",
     }
   );
+
+  if (!response) {
+    return {
+      response: new Response(null, { status: 503 }),
+      envelope: unreachableEnvelope<{ referenceNumber: string; message: string }>(),
+    };
+  }
 
   const envelope = await parseEnvelope<{ referenceNumber: string; message: string }>(
     response
@@ -314,7 +345,8 @@ export async function modifyBookingDotNet(
     contactEmail?: string;
   }
 ) {
-  const response = await fetch(
+  const response = await dotnetFetch(
+    "bookings.modify",
     dotnetUrl(`/api/Bookings/${encodeURIComponent(referenceNumber)}`),
     {
       method: "PATCH",
@@ -323,6 +355,13 @@ export async function modifyBookingDotNet(
       cache: "no-store",
     }
   );
+
+  if (!response) {
+    return {
+      response: new Response(null, { status: 503 }),
+      envelope: unreachableEnvelope<{ referenceNumber: string; message: string }>(),
+    };
+  }
 
   const envelope = await parseEnvelope<{ referenceNumber: string; message: string }>(
     response
@@ -365,6 +404,7 @@ export async function getRoomDetailsDotNet(
 
   const suffix = query.size > 0 ? `?${query}` : "";
   const response = await dotnetFetch(
+    "rooms.getDetails",
     `${dotnetUrl(`/api/Rooms/${roomId}`)}${suffix}`,
     { cache: "no-store" }
   );
@@ -432,9 +472,11 @@ export async function searchRoomsDotNet(params: {
   if (params.nonSmoking) query.set("nonSmoking", "true");
   if (params.minRating) query.set("minRating", String(params.minRating));
 
-  const response = await dotnetFetch(`${dotnetUrl("/api/Rooms")}?${query}`, {
-    cache: "no-store",
-  });
+  const response = await dotnetFetch(
+    "rooms.search",
+    `${dotnetUrl("/api/Rooms")}?${query}`,
+    { cache: "no-store" }
+  );
 
   if (!response) {
     const envelope = unreachableEnvelope<{ rooms: DotNetRoom[] }>();
@@ -466,15 +508,19 @@ export async function createBookingSessionDotNet(body: {
   checkOutDate: string;
   guestCount: number;
 }) {
-  const response = await dotnetFetch(dotnetUrl("/api/booking-sessions"), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      [bookingApiConfig.apiKeyHeaderName]: bookingApiConfig.apiKey,
-    },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
+  const response = await dotnetFetch(
+    "bookingSessions.create",
+    dotnetUrl("/api/booking-sessions"),
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        [bookingApiConfig.apiKeyHeaderName]: bookingApiConfig.apiKey,
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    }
+  );
 
   if (!response) {
     return {
@@ -498,6 +544,7 @@ export async function createBookingSessionDotNet(body: {
 
 export async function getBookingSessionDotNet(token: string) {
   const response = await dotnetFetch(
+    "bookingSessions.get",
     dotnetUrl(`/api/booking-sessions/${token}`),
     { cache: "no-store" }
   );
@@ -564,14 +611,25 @@ export async function createBookingDotNet(body: Record<string, unknown>) {
   const isGuestBooking =
     body.bookingType === "GUEST" || body.bookingType === 0;
 
-  const response = await fetch(dotnetUrl("/api/Bookings"), {
-    method: "POST",
-    headers: isGuestBooking
-      ? { "Content-Type": "application/json" }
-      : jsonHeaders(),
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
+  const response = await dotnetFetch(
+    isGuestBooking ? "bookings.createGuest" : "bookings.createMember",
+    dotnetUrl("/api/Bookings"),
+    {
+      method: "POST",
+      headers: isGuestBooking
+        ? { "Content-Type": "application/json" }
+        : jsonHeaders(),
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    }
+  );
+
+  if (!response) {
+    return {
+      response: new Response(null, { status: 503 }),
+      envelope: unreachableEnvelope<{ referenceNumber: string }>(),
+    };
+  }
 
   const envelope = await parseEnvelope<{
     referenceNumber: string;

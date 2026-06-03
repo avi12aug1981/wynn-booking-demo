@@ -4,7 +4,7 @@ public sealed class ReservationEmailOptions
 {
     public const string SectionName = "ReservationEmail";
 
-    public string ClientBaseUrl { get; init; } = "http://localhost:3000";
+    public string ClientBaseUrl { get; set; } = string.Empty;
 
     public string? FromAddress { get; init; }
 

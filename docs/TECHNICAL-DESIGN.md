@@ -65,7 +65,7 @@ Errors use HTTP status codes (400 validation, 401/403 auth, 404 not found, 409 c
 
 ## Frontend Integration
 
-- Env: `NEXT_PUBLIC_BOOKING_API_URL=http://localhost:5116`
+- Env: `NEXT_PUBLIC_BOOKING_API_URL` (optional; default in `config/development.defaults.json`)
 - Member calls send `Authorization: Bearer {token}` from `sessionStorage`.
 - Guest booking POST omits JWT so `MemberId` is not stamped accidentally.
 - Room details only via `/rooms/{roomId}/{sessionToken}`; bare `/rooms/{id}` redirects to search.

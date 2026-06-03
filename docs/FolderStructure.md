@@ -8,6 +8,7 @@ wynn-booking-demo/
 ├── components/ui/          # Shared atomic UI
 ├── features/               # Domain features (main UI logic)
 ├── lib/                    # dotnet-booking-client (primary), legacy prisma/utils
+├── config/                 # development.defaults.json — shared local URLs
 ├── docs/                   # Interview & architecture docs
 ├── backend/                # .NET solution
 ├── prisma/                 # Legacy/local schema (optional path)

@@ -2,8 +2,8 @@
 
 **Stack:** ASP.NET Core 9 Web API · EF Core · Azure SQL — called from Next.js via `lib/api/dotnet-booking-client.ts`.
 
-**Base URL:** `http://localhost:5116`  
-**Swagger:** `http://localhost:5116/swagger/index.html`
+**Base URL:** `NEXT_PUBLIC_BOOKING_API_URL` or `config/development.defaults.json` → `urls.bookingApi`  
+**Swagger:** `{bookingApi}/swagger/index.html`
 
 **Envelope:** `{ success, data?, message?, errors?, traceId? }`
 

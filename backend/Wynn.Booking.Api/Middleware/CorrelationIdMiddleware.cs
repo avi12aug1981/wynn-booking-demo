@@ -17,8 +17,19 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next)
         context.Response.Headers[HttpContextExtensions.CorrelationHeaderName] = correlationId;
         context.TraceIdentifier = correlationId;
 
+        var clientOperation = context.Request.Headers[HttpContextExtensions.ClientOperationHeaderName]
+            .FirstOrDefault();
+
+        if (!string.IsNullOrWhiteSpace(clientOperation))
+        {
+            context.Items[HttpContextExtensions.ClientOperationItemKey] = clientOperation;
+        }
+
         using (Serilog.Context.LogContext.PushProperty("CorrelationId", correlationId))
         using (Serilog.Context.LogContext.PushProperty("TraceId", correlationId))
+        using (Serilog.Context.LogContext.PushProperty(
+            "Operation",
+            string.IsNullOrWhiteSpace(clientOperation) ? null : clientOperation))
         {
             await next(context);
         }

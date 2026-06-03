@@ -40,7 +40,7 @@ dotnet ef database update --project ../Wynn.Booking.Infrastructure
 dotnet run
 ```
 
-Open http://localhost:5116/swagger and try `GET /api/health`.
+Open `{urls.bookingApi}/swagger` from `config/development.defaults.json` and try `GET /api/health`.
 
 ---
 

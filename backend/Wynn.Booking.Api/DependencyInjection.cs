@@ -12,6 +12,7 @@ using Wynn.Booking.Api.Configuration;
 using Wynn.Booking.Application.Abstractions.Auth;
 using Wynn.Booking.Application.Auth;
 using Wynn.Booking.Application.Common;
+using Wynn.Booking.Infrastructure.Configuration;
 
 namespace Wynn.Booking.Api;
 
@@ -19,12 +20,25 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApiServices(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
         services.Configure<ApiSecurityOptions>(configuration.GetSection(ApiSecurityOptions.SectionName));
         services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.SectionName));
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<DemoAuthOptions>(configuration.GetSection(DemoAuthOptions.SectionName));
+
+        services.PostConfigure<ReservationEmailOptions>(options =>
+        {
+            if (!string.IsNullOrWhiteSpace(options.ClientBaseUrl))
+            {
+                return;
+            }
+
+            options.ClientBaseUrl = DevelopmentDefaults.ResolveClientBaseUrl(
+                configuration,
+                environment);
+        });
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
@@ -164,14 +178,7 @@ public static class DependencyInjection
                     }));
         });
 
-        var corsOrigins = configuration
-            .GetSection($"{CorsOptions.SectionName}:AllowedOrigins")
-            .Get<string[]>()
-            ?? configuration
-                .GetSection(CorsOptions.SectionName)
-                .Get<CorsOptions>()
-                ?.AllowedOrigins
-            ?? ["http://localhost:3000"];
+        var corsOrigins = DevelopmentDefaults.ResolveCorsOrigins(configuration, environment);
 
         services.AddCors(policy =>
         {

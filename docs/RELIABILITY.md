@@ -44,7 +44,7 @@ Write endpoints (`POST /api/bookings`, cancel) use `booking-writes` policy to re
 
 ## Logging
 
-- Serilog file sink: `backend/Wynn.Booking.Api/logs/wynn-booking-api-*.log`
+- Unified audit log: `logs/wynn-booking-audit.jsonl` — see [LOGGING.md](./LOGGING.md)
 - Request completion log includes `ApiTraceId` matching JSON `traceId`
 - Long-running MediatR requests logged > 500 ms
 

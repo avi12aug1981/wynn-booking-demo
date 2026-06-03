@@ -4,7 +4,11 @@ public static class HttpContextExtensions
 {
     public const string CorrelationHeaderName = "X-Correlation-Id";
 
+    public const string ClientOperationHeaderName = "X-Client-Operation";
+
     public const string TraceIdItemKey = "Wynn.ApiTraceId";
+
+    public const string ClientOperationItemKey = "Wynn.ClientOperation";
 
     /// <summary>
     /// Returns the stable request trace id assigned by CorrelationIdMiddleware.

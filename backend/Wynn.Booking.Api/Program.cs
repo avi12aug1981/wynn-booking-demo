@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Formatting.Compact;
 using Wynn.Booking.Api;
+using Wynn.Booking.Api.Configuration;
+using Wynn.Booking.Api.Logging;
 using Wynn.Booking.Api.Middleware;
 using Wynn.Booking.Application;
 using Wynn.Booking.Infrastructure;
@@ -11,41 +14,49 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    var logFilePath = Path.Combine(builder.Environment.ContentRootPath, "logs", "wynn-booking-api-.log");
+    var auditLogPath = AuditLogPathResolver.Resolve(builder.Environment, builder.Configuration);
+    Directory.CreateDirectory(Path.GetDirectoryName(auditLogPath)!);
+
+    builder.Services.Configure<AuditLogOptions>(
+        builder.Configuration.GetSection(AuditLogOptions.SectionName));
 
     Log.Logger = new LoggerConfiguration()
+        .ReadFrom.Configuration(builder.Configuration)
+        .Filter.With<SerilogSensitiveDataFilter>()
         .Enrich.FromLogContext()
+        .Enrich.WithProperty("Application", "Wynn.Booking.Api")
+        .Enrich.WithProperty("Layer", "API")
         .WriteTo.File(
-            logFilePath,
-            rollingInterval: RollingInterval.Day,
-            retainedFileCountLimit: 14,
-            flushToDiskInterval: TimeSpan.FromSeconds(1),
-            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] TraceId={TraceId} {Message:lj}{NewLine}{Exception}")
+            new CompactJsonFormatter(),
+            auditLogPath,
+            shared: true,
+            flushToDiskInterval: TimeSpan.FromSeconds(1))
         .CreateLogger();
 
     builder.Host.UseSerilog((context, services, configuration) =>
         configuration
             .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)
+            .Filter.With<SerilogSensitiveDataFilter>()
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Application", "Wynn.Booking.Api")
+            .Enrich.WithProperty("Layer", "API")
             .WriteTo.File(
-                logFilePath,
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 14,
-                flushToDiskInterval: TimeSpan.FromSeconds(1),
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] TraceId={TraceId} {Message:lj}{NewLine}{Exception}"));
+                new CompactJsonFormatter(),
+                auditLogPath,
+                shared: true,
+                flushToDiskInterval: TimeSpan.FromSeconds(1)));
 
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
-    builder.Services.AddApiServices(builder.Configuration);
+    builder.Services.AddApiServices(builder.Configuration, builder.Environment);
 
     builder.Services.AddHealthChecks()
         .AddDbContextCheck<BookingDbContext>("sqlserver", tags: ["ready", "db"]);
 
     var app = builder.Build();
 
-    Log.Information("Serilog file log path: {LogFilePath}", logFilePath);
+    Log.Information("Unified audit log path: {AuditLogPath}", auditLogPath);
 
     if (app.Environment.IsDevelopment())
     {
@@ -75,6 +86,7 @@ try
     app.UseMiddleware<RequestCompletionLoggingMiddleware>();
 
     app.UseAuthentication();
+    app.UseMiddleware<MemberAuditEnrichmentMiddleware>();
     app.UseAuthorization();
 
     if (!app.Environment.IsProduction())

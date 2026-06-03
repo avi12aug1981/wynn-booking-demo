@@ -1,0 +1,7 @@
+{
+  "$comment": "Single source for local dev URLs. Override via .env (UI) or appsettings.Development.json / Azure env (API). Keep bookingApi port in sync with backend/Wynn.Booking.Api/Properties/launchSettings.json.",
+  "urls": {
+    "appBase": "http://localhost:3000",
+    "bookingApi": "http://localhost:5116"
+  }
+}

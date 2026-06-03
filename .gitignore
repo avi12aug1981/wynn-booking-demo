@@ -61,6 +61,7 @@ claude.md
 
 # Local application logs
 logs/*.log
+logs/*.jsonl
 backend/Wynn.Booking.Api/logs/
 
 # Personal / interview-only (keep local; do not push)

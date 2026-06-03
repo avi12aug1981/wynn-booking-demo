@@ -2,6 +2,7 @@ import { BookingType } from "@/app/types/prisma-enums";
 import { sendEmail } from "@/lib/email/mailer";
 import { logger } from "@/lib/logger";
 import { LogEvents, OperationNames } from "@/constants";
+import { getAppBaseUrl } from "@/lib/config/app-urls";
 
 export type ReservationEmailBooking = {
   referenceNumber: string;
@@ -47,11 +48,7 @@ function formatCurrency(value: unknown) {
 }
 
 function getConfirmationPageUrl(referenceNumber: string) {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") ??
-    "http://localhost:3000";
-
-  return `${baseUrl}/confirmation/${referenceNumber}`;
+  return `${getAppBaseUrl()}/confirmation/${referenceNumber}`;
 }
 
 function buildReservationEmailContent(booking: ReservationEmailBooking) {

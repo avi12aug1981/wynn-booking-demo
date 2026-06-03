@@ -38,6 +38,21 @@ Centralized rules prevent IDOR on reservation references:
 - **Member checkout** only sets `MemberId` when `BookingType = Member`.
 - Server validates member name/email against JWT even if client tampers with form (fields are read-only in UI).
 
+## JWT and logging (do not log secrets)
+
+**Yes — putting a JWT in console or file logs is a security issue.** Anyone with log access can replay the token until it expires (session hijacking). Same for passwords, API keys, and `Authorization` headers.
+
+| Where tokens appear today | Risk | Mitigation in this repo |
+|---------------------------|------|-------------------------|
+| `POST /api/auth/login` **response body** | Required for the browser to authenticate | Response is **not** written to audit logs; UI audit only records `traceId` + status |
+| Browser **DevTools → Network** | Visible to anyone at the keyboard | Expected in dev; not the same as server logging |
+| `sessionStorage` (`wynnMemberAccessToken`) | XSS can steal it | Demo tradeoff; production → **httpOnly cookie** + CSRF |
+| Serilog / audit file | Would be critical | `SerilogSensitiveDataFilter` drops events with token/password property names; auth namespaces at **Warning** |
+
+**We do not** `console.log(accessToken)` in application code. If you see a JWT in the terminal, check: Swagger “Authorize”, a browser extension, or expanded Network response — not intentional server logging.
+
+**Interview line:** “Tokens go to the client once at login; logs get correlation id and member id, never the bearer string.”
+
 ## UI Security Notes
 
 - Checkout URLs use **booking session tokens**, not guessable room IDs + query dates alone.
@@ -47,7 +62,7 @@ Centralized rules prevent IDOR on reservation references:
 
 ## Transport & Headers
 
-- CORS restricted to configured origins (e.g. `http://localhost:3000`).
+- CORS restricted to `Cors:AllowedOrigins` (local dev falls back to `config/development.defaults.json` → `urls.appBase`).
 - Correlation ID middleware (`X-Correlation-Id`) for audit trails.
 - Rate limiting on booking writes (create, cancel).
 

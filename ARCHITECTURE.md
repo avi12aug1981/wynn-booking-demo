@@ -25,7 +25,7 @@ Browser → Next.js (Page Gateway + features)
          Azure SQL
 ```
 
-Configure the UI with `NEXT_PUBLIC_BOOKING_API_URL` (see `.env.example`).
+Configure URLs via `.env` or [`config/development.defaults.json`](config/development.defaults.json) (see [`config/README.md`](config/README.md)).
 
 ## Frontend layout
 

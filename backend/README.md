@@ -64,8 +64,7 @@ dotnet restore
 dotnet run
 ```
 
-- Swagger: http://localhost:5116/swagger
-- Health: http://localhost:5116/api/health
+- Swagger / health: see `urls.bookingApi` in [`../config/development.defaults.json`](../config/development.defaults.json) (`/swagger`, `/api/health`)
 - Room search: `GET /api/rooms?checkInDate=2026-06-01&checkOutDate=2026-06-03&guestCount=2`
 
 ## Authentication (JWT)
@@ -103,14 +102,14 @@ Configure `Jwt:SecretKey` (min 32 chars) in production via environment variable 
 
 When the API runs, Serilog writes to:
 
-`backend/Wynn.Booking.Api/logs/wynn-booking-api-YYYYMMDD.log`
+`logs/wynn-booking-audit.jsonl` (repo root; see [docs/LOGGING.md](../docs/LOGGING.md))
 
 On startup the API logs the **full absolute path** to this file.
 
 Search using the **`traceId` from the JSON response** (same value as `ApiTraceId` in logs):
 
 ```bash
-grep "ApiTraceId=YOUR_TRACE_ID_FROM_RESPONSE" backend/Wynn.Booking.Api/logs/wynn-booking-api-*.log
+grep "YOUR_TRACE_ID_FROM_RESPONSE" logs/wynn-booking-audit.jsonl
 ```
 
 Every request also writes a completion line: `HTTP POST /api/Bookings -> 400 ApiTraceId=...`

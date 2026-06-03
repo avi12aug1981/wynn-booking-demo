@@ -34,6 +34,7 @@ Browser → Next.js → dotnet-booking-client → ASP.NET Core API → Azure SQL
 | [SECURITY.md](./SECURITY.md) | Auth, secrets, git hygiene |
 | [AVAILABILITY-RULES.md](./AVAILABILITY-RULES.md) | Overlap, serializable TX |
 | [RELIABILITY.md](./RELIABILITY.md) | Email non-blocking, traceId |
+| [LOGGING.md](./LOGGING.md) | Unified UI → API → DB audit trail |
 | [TESTING.md](./TESTING.md) | Integration tests + manual checklist |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | Azure SQL + App Service + UI env |
 
@@ -43,6 +44,7 @@ Browser → Next.js → dotnet-booking-client → ASP.NET Core API → Azure SQL
 |----------|--------|
 | [DesignPatterns.md](./DesignPatterns.md) | Patterns in .NET + Next.js |
 | [FolderStructure.md](./FolderStructure.md) | Repo map |
+| [../config/README.md](../config/README.md) | Shared dev URLs (single source) |
 | [../backend/README.md](../backend/README.md) | Run API, migrations, endpoints |
 | [screenshots/README.md](./screenshots/README.md) | Deck captures (PNGs local only) |
 

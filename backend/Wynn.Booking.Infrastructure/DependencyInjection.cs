@@ -25,7 +25,13 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException(
                 "Connection string 'BookingDatabase' is not configured.");
 
-        services.AddDbContext<BookingDbContext>(options =>
+        services.AddHttpContextAccessor();
+        services.AddSingleton<DbCommandAuditInterceptor>();
+
+        services.AddDbContext<BookingDbContext>((serviceProvider, options) =>
+        {
+            options.AddInterceptors(
+                serviceProvider.GetRequiredService<DbCommandAuditInterceptor>());
             options.UseSqlServer(connectionString, sql =>
             {
                 sql.EnableRetryOnFailure(
@@ -33,7 +39,8 @@ public static class DependencyInjection
                     maxRetryDelay: TimeSpan.FromSeconds(10),
                     errorNumbersToAdd: null);
                 sql.MigrationsAssembly(typeof(BookingDbContext).Assembly.FullName);
-            }));
+            });
+        });
 
         services.AddOptions<ReservationEmailOptions>()
             .Bind(configuration.GetSection(ReservationEmailOptions.SectionName));

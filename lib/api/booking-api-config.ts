@@ -1,9 +1,8 @@
 import { SecurityConstants } from "@/constants";
+import { getBookingApiUrl } from "@/lib/config/app-urls";
 
 export const bookingApiConfig = {
-  dotnetApiUrl:
-    process.env.NEXT_PUBLIC_BOOKING_API_URL?.replace(/\/$/, "") ??
-    "http://localhost:5116",
+  dotnetApiUrl: getBookingApiUrl(),
 
   apiKey:
     process.env.NEXT_PUBLIC_INTERNAL_API_KEY ??
