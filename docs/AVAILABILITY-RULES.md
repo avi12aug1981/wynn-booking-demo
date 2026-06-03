@@ -1,5 +1,7 @@
 # Availability Rules
 
+Enforced in **ASP.NET Core** (`BookingRepository`, `RoomSearchService`, serializable create/modify transactions) against **Azure SQL** via EF Core.
+
 ## Principle
 
 **Only confirmed bookings consume inventory.** A `BookingSession` does not reserve a room; two users can hold sessions for the same room/dates until one completes payment.

@@ -1,5 +1,7 @@
 # Deployment
 
+Deploy **Next.js** and **ASP.NET Core 9** separately; database is **Azure SQL** (EF Core migrations). Prisma/SQLite is not used on this path.
+
 ## Components
 
 | Component | Target | Notes |

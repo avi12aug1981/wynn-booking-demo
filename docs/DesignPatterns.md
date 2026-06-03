@@ -20,7 +20,8 @@
 | **Feature modules** | `features/rooms`, `booking`, etc. | Vertical ownership |
 | **Atomic design** | `components/ui/atoms|molecules|organisms` | Reusable Wynn-styled UI |
 | **Custom hooks** | `useDemoSession` | Centralize auth/session refresh |
-| **BFF-style proxy** | `app/api/booking-sessions/...` | API key for session create from server route |
+| **API client adapter** | `lib/api/dotnet-booking-client.ts` | Single client for .NET envelope, JWT, `x-api-key` on session create |
+| **Legacy BFF routes** | `app/api/booking-sessions/...` | Optional Prisma-era proxies; v3 UI calls .NET directly |
 | **View model mapper** | `reservation-view-model.ts` | Single display shape for confirmation + manage |
 
 ## Domain Patterns

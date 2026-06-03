@@ -52,13 +52,20 @@ try
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<BookingDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        await DatabaseInitializer.InitializeAsync(dbContext, logger);
+        await DatabaseInitializer.InitializeAsync(
+            dbContext,
+            logger,
+            app.Configuration);
     }
     else
     {
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<BookingDbContext>();
-        await dbContext.Database.MigrateAsync();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        await DatabaseInitializer.InitializeAsync(
+            dbContext,
+            logger,
+            app.Configuration);
     }
 
     app.UseMiddleware<CorrelationIdMiddleware>();

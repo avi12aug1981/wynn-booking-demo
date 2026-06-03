@@ -7,6 +7,7 @@ namespace Wynn.Booking.Infrastructure.Persistence;
 public sealed class BookingDbContext(DbContextOptions<BookingDbContext> options) : DbContext(options)
 {
     public DbSet<Room> Rooms => Set<Room>();
+    public DbSet<Member> Members => Set<Member>();
     public DbSet<BookingEntity> Bookings => Set<BookingEntity>();
     public DbSet<BookingGuest> BookingGuests => Set<BookingGuest>();
     public DbSet<BookingSession> BookingSessions => Set<BookingSession>();

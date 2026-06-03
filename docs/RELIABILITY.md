@@ -1,5 +1,7 @@
 # Reliability
 
+Applies to the **ASP.NET Core 9** API and Next.js client integration (`dotnet-booking-client`). Legacy Prisma routes are out of scope.
+
 ## Design Goals
 
 - Booking creation must be **consistent** under concurrency.

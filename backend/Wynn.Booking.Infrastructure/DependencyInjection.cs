@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Wynn.Booking.Application.Auth;
 using Wynn.Booking.Application.Abstractions.Notifications;
+using Wynn.Booking.Infrastructure.Auth;
 using Wynn.Booking.Application.Abstractions.Persistence;
 using Wynn.Booking.Application.BookingSessions;
 using Wynn.Booking.Application.Bookings;
@@ -41,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IRoomRepository, RoomRepository>();
         services.AddScoped<IBookingSessionRepository, BookingSessionRepository>();
         services.AddScoped<IBookingRepository, BookingRepository>();
+        services.AddScoped<IMemberCredentialStore, MemberCredentialStore>();
 
         return services;
     }

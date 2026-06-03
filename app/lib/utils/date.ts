@@ -29,11 +29,15 @@ export function isValidDateString(value?: string): boolean {
   return parseLocalDate(value) !== null;
 }
 
-export function startOfToday(): Date {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+/** Calendar today at Wynn Las Vegas (America/Los_Angeles), aligned with API validation. */
+export function hotelTodayDateInputValue(): string {
+  return new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/Los_Angeles",
+  });
+}
 
-  return today;
+export function startOfToday(): Date {
+  return parseLocalDate(hotelTodayDateInputValue()) ?? new Date();
 }
 
 export function isBeforeToday(value: string): boolean {
@@ -43,7 +47,8 @@ export function isBeforeToday(value: string): boolean {
     return true;
   }
 
-  return date < startOfToday();
+  const today = startOfToday();
+  return date < today;
 }
 
 export function isCheckOutAfterCheckIn(checkIn: string, checkOut: string): boolean {
@@ -58,13 +63,7 @@ export function isCheckOutAfterCheckIn(checkIn: string, checkOut: string): boole
 }
 
 export function todayDateInputValue(): string {
-  const today = startOfToday();
-
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return hotelTodayDateInputValue();
 }
 
 export function addDaysToDateInputValue(dateInputValue: string, days: number) {

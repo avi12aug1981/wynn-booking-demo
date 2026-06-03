@@ -7,12 +7,12 @@ wynn-booking-demo/
 ├── app/                    # Next.js App Router (thin)
 ├── components/ui/          # Shared atomic UI
 ├── features/               # Domain features (main UI logic)
-├── lib/                    # API clients, shared utils
+├── lib/                    # dotnet-booking-client (primary), legacy prisma/utils
 ├── docs/                   # Interview & architecture docs
 ├── backend/                # .NET solution
 ├── prisma/                 # Legacy/local schema (optional path)
 ├── README.md
-└── ARCHITECTURE.md         # Extended frontend architecture notes
+└── ARCHITECTURE.md         # Entry point → docs/Architecture.md + frontend flows
 ```
 
 ## `app/`
@@ -20,7 +20,7 @@ wynn-booking-demo/
 ```text
 app/
 ├── [[...segments]]/page.tsx   # Catch-all → PageGateway
-├── api/                       # Next API routes (BFF helpers)
+├── api/                       # Legacy Next routes (Prisma); v3 uses dotnet-booking-client
 ├── constants/                 # messages, routes, demo-user
 ├── hooks/                     # useDemoSession
 ├── globals.css
@@ -52,6 +52,23 @@ backend/
 └── scripts/                         # provision-azure-sql, deploy
 ```
 
+## `lib/` (v3)
+
+```text
+lib/
+├── api/dotnet-booking-client.ts   # Primary — all booking UI calls to .NET API
+├── api/booking-api-config.ts      # Base URL, API key header for session create
+└── prisma/                        # Legacy — used only by old app/api routes
+```
+
+## Legacy folders (not v3 demo path)
+
+| Path | Role |
+|------|------|
+| `prisma/` | SQLite schema + seed for old POC |
+| `features/*/services/*-repository.ts` | Prisma repositories (unused by v3 UI pages) |
+| `app/api/bookings`, `app/api/rooms`, … | Next.js API → Prisma |
+
 ## Key Files (Interview Pointers)
 
 | File | Purpose |
@@ -60,6 +77,7 @@ backend/
 | `lib/api/dotnet-booking-client.ts` | All .NET API calls |
 | `BookingService.cs` | Create/modify/cancel/list |
 | `BookingAuthorization.cs` | Security rules |
+| `MemberCredentialStore.cs` | Login against `Members` table |
 | `BookingRepository.cs` | Overlap + persistence |
 | `SmtpReservationConfirmationNotifier.cs` | Email send |
 | `components/ui/organisms/AppTopBar.tsx` | Nav + auth UX |
@@ -68,6 +86,7 @@ backend/
 
 ```text
 docs/
+├── README.md              # Index + v3 stack table
 ├── Architecture.md
 ├── TECHNICAL-DESIGN.md
 ├── SECURITY.md

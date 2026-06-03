@@ -2,14 +2,14 @@
 
 ## Threat Model (Demo Scope)
 
-This POC targets **demonstration and interview discussion**, not PCI-certified production. Still, the design applies defense in depth appropriate for a booking BFF + API split.
+This POC targets **demonstration and interview discussion**, not PCI-certified production. The v3 UI talks to **ASP.NET Core** directly (`dotnet-booking-client`); legacy Next.js `app/api/*` Prisma routes are not part of the demo path.
 
 ## Authentication
 
 | Mechanism | Use |
 |-----------|-----|
 | **JWT Bearer** | Demo member sign-in (`POST /api/auth/login`). Claims: `member_id`, email, name, role. |
-| **API key** (`x-api-key`) | `POST /api/booking-sessions` only — mirrors Next.js BFF protecting session creation. |
+| **API key** (`x-api-key`) | `POST /api/booking-sessions` only — enforced by `ApiKeyMiddleware` on the .NET API (demo key in UI config; production should proxy server-side). |
 | **Anonymous** | Room search, session read by token, confirmation by reference, guest booking create (no JWT). |
 
 Production recommendation: **Microsoft Entra ID** (or Auth0) instead of config-file passwords; Managed Identity for SQL.

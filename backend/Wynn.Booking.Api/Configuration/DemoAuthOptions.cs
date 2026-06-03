@@ -1,5 +1,6 @@
 namespace Wynn.Booking.Api.Configuration;
 
+/// <summary>Seed source for the Members table on first run (login uses SQL, not this config directly).</summary>
 public sealed class DemoAuthOptions
 {
     public const string SectionName = "DemoAuth";

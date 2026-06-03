@@ -1,5 +1,7 @@
 # Technical Design
 
+**Stack:** Next.js 16 UI → ASP.NET Core 9 API → EF Core → Azure SQL. See [README.md](./README.md) and [Architecture.md](./Architecture.md).
+
 ## API Contract
 
 All endpoints return a consistent envelope:
@@ -72,7 +74,8 @@ Errors use HTTP status codes (400 validation, 401/403 auth, 404 not found, 409 c
 
 - **Room** — catalog, capacity, pets, status.
 - **BookingSession** — token, room, dates, guest count, expiry.
-- **Booking** — reference, type, member link, contact, pricing, status, payment.
+- **Member** — account (email, password hash for demo, tier, address, status).
+- **Booking** — reference, type, `MemberId` FK, contact, pricing, status, payment.
 - **BookingGuest** — guest lines on reservation.
 
 ## Configuration
@@ -81,7 +84,7 @@ Errors use HTTP status codes (400 validation, 401/403 auth, 404 not found, 409 c
 |------|----------|
 | DB | `ConnectionStrings:BookingDatabase` |
 | JWT | `Jwt:*` |
-| Demo users | `DemoAuth:Members` |
+| Demo users | `Members` table (seeded from `DemoAuth:Members` in Development) |
 | API key | `ApiSecurity:InternalApiKey` |
 | SMTP | `ReservationEmail:Smtp` + `FromAddress` (use `MailboxAddress.Parse` format) |
 | CORS | `Cors:AllowedOrigins` |

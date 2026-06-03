@@ -4,7 +4,7 @@
 
 Project: `backend/Wynn.Booking.Api.IntegrationTests`
 
-Uses `WebApplicationFactory` with test configuration overrides (demo auth user, API key).
+Uses `WebApplicationFactory` with test configuration overrides (demo auth: `demo.member@wynn.local`, API key).
 
 ```bash
 cd backend
@@ -56,7 +56,7 @@ Tests require reachable SQL per `appsettings.Development.json` or factory overri
 No automated E2E suite in repo; recommended manual pass before interview:
 
 1. `npm run dev` + `dotnet run`
-2. `.env.local` with `NEXT_PUBLIC_BOOKING_API_URL`
+2. `.env` with `NEXT_PUBLIC_BOOKING_API_URL=http://localhost:5116` (see `.env.example`)
 3. Full guest + member flows above
 
 Optional additions: Playwright for smoke, Vitest for date/auth helpers.

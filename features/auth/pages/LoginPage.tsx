@@ -5,7 +5,6 @@ import { useState, type FormEvent } from "react";
 import { BookingErrors } from "@/app/constants/booking-errors";
 import { Messages } from "@/app/constants/messages";
 import {
-  isValidDemoMemberLogin,
   setDemoGuestSession,
   setDemoMemberAuth,
 } from "@/app/constants/demo-user";
@@ -55,7 +54,8 @@ export default function LoginPage({ searchParams = {} }: LoginPageProps) {
     setLoginError(null);
     setIsSubmitting(true);
 
-    if (!isValidDemoMemberLogin(email, password)) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
       setLoginError(Messages.LoginPage.InvalidCredentials);
       setIsSubmitting(false);
       return;
@@ -63,7 +63,7 @@ export default function LoginPage({ searchParams = {} }: LoginPageProps) {
 
     try {
       const { response, envelope } = await loginDotNet(
-        email.trim(),
+        trimmedEmail,
         password
       );
 

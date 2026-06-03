@@ -29,7 +29,6 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
-        services.AddSingleton<IDemoMemberCredentialStore, DemoMemberCredentialStore>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer();

@@ -1,6 +1,6 @@
 # Wynn Booking API (.NET 9)
 
-ASP.NET Core Web API for the Wynn booking domain. **Does not modify the Next.js React app.**
+ASP.NET Core Web API for the Wynn booking domain — **system of record** for the v3 demo (EF Core + Azure SQL). The Next.js app calls this API via `lib/api/dotnet-booking-client.ts`.
 
 ## Architecture
 
@@ -74,12 +74,12 @@ dotnet run
 |--------|------|------|
 | POST | `/api/auth/login` | None — returns JWT |
 
-**Demo member** (matches React `app/constants/demo-user.ts` and `DemoAuth` in appsettings):
+**Demo member** (stored in **`Members`** table, seeded on startup from `DemoAuth` in appsettings):
 
 - Email: `demo.member@wynn.local`
 - Password: `demo.member`
 
-Override locally via `appsettings.Development.json` and `NEXT_PUBLIC_DEMO_MEMBER_*` in `.env` (never commit real addresses or SMTP passwords).
+Sign-in reads credentials from SQL, not config alone. Override seed via `DemoAuth:Members` in `appsettings.Development.json` and align `NEXT_PUBLIC_DEMO_MEMBER_*` in `.env`.
 
 Use the token on protected routes:
 

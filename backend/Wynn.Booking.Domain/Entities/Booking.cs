@@ -41,6 +41,7 @@ public class Booking
     public DateTime UpdatedAt { get; set; }
 
     public Room Room { get; set; } = null!;
+    public Member? Member { get; set; }
     public BookingSession? BookingSession { get; set; }
     public ICollection<BookingGuest> Guests { get; set; } = [];
 }

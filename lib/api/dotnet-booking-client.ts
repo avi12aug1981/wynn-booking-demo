@@ -447,11 +447,15 @@ export async function searchRoomsDotNet(params: {
   }
 
   const envelope = await parseEnvelope<{ rooms: DotNetRoom[] }>(response);
+  const errorMessage =
+    envelope.errors?.filter(Boolean).join(" ") ||
+    envelope.message ||
+    undefined;
 
   return {
     ok: response.ok && envelope.success,
     status: response.status,
-    message: envelope.message,
+    message: errorMessage,
     rooms: (envelope.data?.rooms ?? []).map(mapRoom),
   };
 }

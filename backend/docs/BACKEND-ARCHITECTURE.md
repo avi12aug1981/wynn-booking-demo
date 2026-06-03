@@ -58,7 +58,7 @@ First completed booking wins; concurrent submits get **409**.
 
 | Mechanism | Scope |
 |-----------|--------|
-| `x-api-key` | `POST /api/booking-sessions` only (parity with Next.js BFF) |
+| `x-api-key` | `POST /api/booking-sessions` only (`ApiKeyMiddleware`; v3 Next.js sends key via `dotnet-booking-client`) |
 | Rate limiting | `POST /api/bookings`, cancel |
 | CORS | Configurable origins (`Cors:AllowedOrigins`) |
 | Production | Swagger disabled; use `/api/health`, `/health/ready` |
@@ -101,7 +101,7 @@ Integration tests use `WebApplicationFactory` against Development config (requir
 - **Ownership:** `BookingAuthorization` — manage/history/modify use member id + type + email rules; confirmation GET allows email links without login.
 - **Public:** room search, availability, create booking (guest without JWT), get booking by reference.
 - **Manage:** `GET /api/bookings/{ref}/manage` — JWT member only.
-- **API key** (unchanged): `POST /api/booking-sessions` for Next.js BFF.
+- **API key:** `POST /api/booking-sessions` — `ApiKeyMiddleware`; v3 UI sends header from `dotnet-booking-client`.
 
 ## Cancel and modify reservations
 

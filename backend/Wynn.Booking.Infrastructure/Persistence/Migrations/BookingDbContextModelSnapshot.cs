@@ -154,6 +154,8 @@ namespace Wynn.Booking.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("BookingSessionId");
 
+                    b.HasIndex("MemberId");
+
                     b.HasIndex("ReferenceNumber")
                         .IsUnique();
 
@@ -162,6 +164,83 @@ namespace Wynn.Booking.Infrastructure.Persistence.Migrations
                     b.HasIndex("RoomId", "CheckInDate", "CheckOutDate");
 
                     b.ToTable("Bookings", (string)null);
+                });
+
+            modelBuilder.Entity("Wynn.Booking.Domain.Entities.Member", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AddressLine1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AddressLine2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Gender")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("State")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ZipCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Members", (string)null);
                 });
 
             modelBuilder.Entity("Wynn.Booking.Domain.Entities.BookingGuest", b =>
@@ -334,6 +413,11 @@ namespace Wynn.Booking.Infrastructure.Persistence.Migrations
                         .WithMany("Bookings")
                         .HasForeignKey("BookingSessionId");
 
+                    b.HasOne("Wynn.Booking.Domain.Entities.Member", "Member")
+                        .WithMany("Bookings")
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Wynn.Booking.Domain.Entities.Room", "Room")
                         .WithMany("Bookings")
                         .HasForeignKey("RoomId")
@@ -341,6 +425,8 @@ namespace Wynn.Booking.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("BookingSession");
+
+                    b.Navigation("Member");
 
                     b.Navigation("Room");
                 });
@@ -370,6 +456,11 @@ namespace Wynn.Booking.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Wynn.Booking.Domain.Entities.Booking", b =>
                 {
                     b.Navigation("Guests");
+                });
+
+            modelBuilder.Entity("Wynn.Booking.Domain.Entities.Member", b =>
+                {
+                    b.Navigation("Bookings");
                 });
 
             modelBuilder.Entity("Wynn.Booking.Domain.Entities.BookingSession", b =>

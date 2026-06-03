@@ -19,10 +19,26 @@ public static class DateHelpers
         return (int)Math.Ceiling((checkOut - checkIn).TotalDays);
     }
 
+    /// <summary>Calendar "today" at the property (Wynn Las Vegas — Pacific).</summary>
+    public static DateOnly HotelTodayDateOnly()
+    {
+        const string hotelTimeZoneId = "America/Los_Angeles";
+
+        try
+        {
+            var hotelZone = TimeZoneInfo.FindSystemTimeZoneById(hotelTimeZoneId);
+            var hotelNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, hotelZone);
+            return DateOnly.FromDateTime(hotelNow);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return DateOnly.FromDateTime(DateTime.Now);
+        }
+    }
+
     public static DateTime StartOfTodayUtc()
     {
-        var today = DateTime.UtcNow.Date;
-        return today;
+        return HotelTodayDateOnly().ToDateTime(TimeOnly.MinValue);
     }
 
     public static (bool IsValid, string? ErrorMessage) ValidateStayDateRange(
@@ -31,7 +47,7 @@ public static class DateHelpers
     {
         var checkIn = ParseDateOnly(checkInDate);
         var checkOut = ParseDateOnly(checkOutDate);
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = HotelTodayDateOnly();
 
         if (checkIn is null || checkOut is null)
         {

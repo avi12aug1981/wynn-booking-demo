@@ -74,25 +74,26 @@ If health check fails with timeout, add the App Service **outbound IP addresses*
 
 To enable Swagger in Azure for a demo slot, use a separate **Staging** slot with `ASPNETCORE_ENVIRONMENT=Staging` and adjust `Program.cs` if needed.
 
-## Connect Next.js later (optional)
+## Connect Next.js UI
 
-When ready, in the React app `.env`:
+In the React app `.env` (or hosting env vars):
 
 ```env
 NEXT_PUBLIC_BOOKING_API_URL=https://YOUR_APP.azurewebsites.net
 ```
 
-Add CORS on the API for your front-end origin (not configured yet — add `AddCors` in `Program.cs` when you wire the UI).
+Set **`Cors__AllowedOrigins__0`** (or `Cors:AllowedOrigins` in config) to your frontend URL — CORS is already configured in `Program.cs`.
+
+The UI calls the .NET API directly via `lib/api/dotnet-booking-client.ts`, including **`x-api-key`** on `POST /api/booking-sessions` (see `ApiKeyMiddleware`).
 
 ## API security in Azure
 
-Today the API is **open** (demo). For production:
+Demo posture today: JWT for members, API key on session create, rate limits on writes. For production:
 
-- **Entra ID (Azure AD) JWT** for authenticated users
+- **Entra ID (Azure AD) JWT** instead of config-file demo users
 - **API Management** in front of App Service
 - **Managed identity** to SQL instead of SQL user/password in app settings
-
-The Next.js **`x-api-key`** on `POST /api/booking-sessions` is separate; add similar middleware to .NET when you integrate.
+- Move **`x-api-key`** to a server-side BFF so the key is not exposed in the browser
 
 ## Cost / cleanup
 

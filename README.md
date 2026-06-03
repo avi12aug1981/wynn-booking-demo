@@ -27,27 +27,21 @@ The application demonstrates luxury room search, availability validation, bookin
 Browser
    |
    v
-Next.js Page Gateway
-app/[[...segments]]/page.tsx
+Next.js Page Gateway (features/app-router)
    |
    v
-Feature Route Registry
-features/app-router
-   |
-   +--> Rooms Feature
-   +--> Booking Feature
-   +--> Confirmation Feature
-   +--> Auth Feature
-   +--> Reservations Feature
+lib/api/dotnet-booking-client.ts  (REST + JWT + x-api-key)
    |
    v
-API Layer / Services
+ASP.NET Core 9 Web API  (:5116, Swagger in dev)
    |
    v
-ASP.NET Core Web API (primary) · Prisma (legacy/local optional)
-   |
-   v
-Database
+EF Core 9  →  Azure SQL / SQL Server
+```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md), [docs/Architecture.md](docs/Architecture.md), and [docs/README.md](docs/README.md).
+
+Legacy `prisma/` + SQLite + `app/api/*` Prisma routes remain from an earlier spike; **the v3 demo uses only the .NET API.**
 
 ## Technology Stack
 
@@ -67,8 +61,8 @@ Database
 
 ### Database
 
-- SQLite (Local Development)
-- Azure SQL (Cloud Deployment)
+- **Azure SQL / SQL Server** (primary — EF Core, demo and cloud)
+- SQLite + Prisma (legacy POC only; not used for v3 demo path)
 
 ---
 
@@ -142,6 +136,7 @@ Additional documentation is available under:
 
 ```text
 docs/
+├── README.md              # Index + v3 stack
 ├── Architecture.md
 ├── TECHNICAL-DESIGN.md
 ├── SECURITY.md
@@ -169,7 +164,10 @@ Default demo sign-in in the repo: `demo.member@wynn.local` / `demo.member`. For 
 
 | Doc | Use |
 |-----|-----|
-| [API-REFERENCE.md](docs/API-REFERENCE.md) | Explain every Swagger endpoint |
-| [Architecture.md](docs/Architecture.md) | System overview |
-| [SECURITY.md](docs/SECURITY.md) | Auth, secrets, git hygiene |
+| [docs/README.md](docs/README.md) | Doc index + v3 stack summary |
+| [docs/Architecture.md](docs/Architecture.md) | System overview (.NET + Azure SQL) |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Frontend flows + legacy Prisma note |
+| [backend/README.md](backend/README.md) | Run API, migrations, Swagger |
+| [docs/API-REFERENCE.md](docs/API-REFERENCE.md) | Swagger endpoint cheat sheet |
+| [docs/SECURITY.md](docs/SECURITY.md) | Auth, secrets, git hygiene |
 | [screenshots/README.md](docs/screenshots/README.md) | Screenshot capture checklist (files stay local) |

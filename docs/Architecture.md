@@ -25,7 +25,9 @@ Wynn Booking Demo is a full-stack hotel reservation proof of concept for senior 
                                       └─────────────────────────┘
 ```
 
-The **primary booking path** is Next.js UI → .NET API → Azure SQL. Legacy Prisma/SQLite routes may exist for earlier POC code; interview demos should use the .NET API.
+The **primary booking path** is Next.js UI → `dotnet-booking-client` → .NET API → Azure SQL.
+
+**Legacy (do not demo):** `prisma/`, SQLite, `lib/prisma/`, and some `app/api/*` routes from an earlier TypeScript/Prisma spike. See [README.md](./README.md) and [../ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ## Technology Stack
 
@@ -34,7 +36,8 @@ The **primary booking path** is Next.js UI → .NET API → Azure SQL. Legacy Pr
 | UI | Next.js 16, React 19, TypeScript, Tailwind CSS |
 | API | ASP.NET Core 9, MediatR, FluentValidation, Serilog |
 | Data | EF Core 9, Azure SQL (demo/prod), migrations + seed |
-| Auth | JWT (demo members), API key on session create |
+| Members | `Members` table (loyalty accounts); login validates against DB |
+| Auth | JWT after `POST /api/auth/login`; API key on session create |
 | Email | MailKit SMTP (optional, Gmail app password in dev) |
 
 ## Frontend Architecture
@@ -63,7 +66,8 @@ See [../backend/docs/BACKEND-ARCHITECTURE.md](../backend/docs/BACKEND-ARCHITECTU
 | **Booking session** (`BSN_*` token) | Short-lived checkout context; does **not** hold inventory. |
 | **Booking** (`WYNN-*` reference) | Confirmed reservation; only source of inventory lock. |
 | **Guest booking** | `BookingType.Guest`, no `MemberId`; confirmation by reference URL. |
-| **Member booking** | `BookingType.Member`, `MemberId` from JWT; history/modify/cancel require sign-in. |
+| **Member** | Row in `Members` (email, tier, status); seeded from `DemoAuth` on first API start. |
+| **Member booking** | `BookingType.Member`, `MemberId` FK to `Members`; history/modify/cancel require sign-in. |
 
 ## Key User Flows
 
@@ -90,6 +94,7 @@ Sign In (JWT) → Search → Book (locked profile) → Confirmation
 
 ## Related Documents
 
+- [README.md](./README.md) — documentation index
 - [TECHNICAL-DESIGN.md](./TECHNICAL-DESIGN.md)
 - [SECURITY.md](./SECURITY.md)
 - [AVAILABILITY-RULES.md](./AVAILABILITY-RULES.md)

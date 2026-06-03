@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Wynn.Booking.Domain.Entities;
 using Wynn.Booking.Domain.Enums;
@@ -10,16 +11,19 @@ public static class DatabaseInitializer
     public static async Task InitializeAsync(
         BookingDbContext dbContext,
         ILogger logger,
+        IConfiguration? configuration = null,
         CancellationToken cancellationToken = default)
     {
         await dbContext.Database.MigrateAsync(cancellationToken);
+
+        await SeedMembersIfEmptyAsync(dbContext, logger, configuration, cancellationToken);
 
         if (await dbContext.Rooms.AnyAsync(cancellationToken))
         {
             return;
         }
 
-        logger.LogInformation("Seeding Wynn booking database...");
+        logger.LogInformation("Seeding Wynn booking database rooms...");
 
         var now = DateTime.UtcNow;
         var rooms = new[]
@@ -38,6 +42,72 @@ public static class DatabaseInitializer
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Seeded {RoomCount} rooms.", rooms.Length);
+    }
+
+    private static async Task SeedMembersIfEmptyAsync(
+        BookingDbContext dbContext,
+        ILogger logger,
+        IConfiguration? configuration,
+        CancellationToken cancellationToken)
+    {
+        if (await dbContext.Members.AnyAsync(cancellationToken))
+        {
+            return;
+        }
+
+        logger.LogInformation("Seeding Members table...");
+
+        var now = DateTime.UtcNow;
+        var seedAccounts = ReadMemberSeedAccounts(configuration);
+
+        foreach (var account in seedAccounts)
+        {
+            dbContext.Members.Add(new Member
+            {
+                FirstName = account.FirstName,
+                LastName = account.LastName,
+                Email = account.Email.Trim(),
+                PasswordHash = account.Password,
+                Gender = Gender.PreferNotToSay,
+                Tier = account.Tier,
+                Status = MemberStatus.Active,
+                AddressLine1 = "3131 Las Vegas Blvd South",
+                City = "Las Vegas",
+                State = "NV",
+                ZipCode = "89109",
+                Country = "USA",
+                CreatedAt = now,
+                UpdatedAt = now,
+            });
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Seeded {MemberCount} members.", seedAccounts.Count);
+    }
+
+    private static IReadOnlyList<MemberSeedAccount> ReadMemberSeedAccounts(IConfiguration? configuration)
+    {
+        var fromConfig = configuration?
+            .GetSection("DemoAuth:Members")
+            .Get<List<MemberSeedAccount>>();
+
+        if (fromConfig is { Count: > 0 })
+        {
+            return fromConfig;
+        }
+
+        return
+        [
+            new MemberSeedAccount
+            {
+                MemberId = 1,
+                Email = "demo.member@wynn.local",
+                Password = "demo.member",
+                FirstName = "Demo",
+                LastName = "Member",
+                Tier = "Gold",
+            },
+        ];
     }
 
     private static Room CreateRoom(
@@ -69,5 +139,15 @@ public static class DatabaseInitializer
             CreatedAt = now,
             UpdatedAt = now,
         };
+    }
+
+    private sealed class MemberSeedAccount
+    {
+        public int MemberId { get; init; }
+        public string Email { get; init; } = string.Empty;
+        public string Password { get; init; } = string.Empty;
+        public string FirstName { get; init; } = string.Empty;
+        public string LastName { get; init; } = string.Empty;
+        public string Tier { get; init; } = "Gold";
     }
 }

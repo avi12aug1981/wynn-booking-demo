@@ -4,24 +4,26 @@ using Wynn.Booking.Application.Common;
 namespace Wynn.Booking.Application.Auth;
 
 public sealed class AuthService(
-    IDemoMemberCredentialStore credentialStore,
+    IMemberCredentialStore credentialStore,
     IJwtTokenGenerator jwtTokenGenerator) : IAuthService
 {
-    public Task<ServiceResult<LoginResponseDto>> LoginAsync(
+    public async Task<ServiceResult<LoginResponseDto>> LoginAsync(
         LoginRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        var user = credentialStore.ValidateCredentials(
+        var user = await credentialStore.ValidateCredentialsAsync(
             request.Email.Trim(),
-            request.Password);
+            request.Password,
+            cancellationToken);
 
         if (user is null)
         {
-            return Task.FromResult(
-                ServiceResult<LoginResponseDto>.Fail(
-                    ApplicationMessages.Auth.InvalidCredentials,
-                    401));
+            return ServiceResult<LoginResponseDto>.Fail(
+                ApplicationMessages.Auth.InvalidCredentials,
+                401);
         }
+
+        await credentialStore.RecordLoginAsync(user.MemberId, cancellationToken);
 
         var token = jwtTokenGenerator.GenerateToken(user);
         var response = new LoginResponseDto(
@@ -29,6 +31,6 @@ public sealed class AuthService(
             token.ExpiresAtUtc,
             user);
 
-        return Task.FromResult(ServiceResult<LoginResponseDto>.Ok(response));
+        return ServiceResult<LoginResponseDto>.Ok(response);
     }
 }
