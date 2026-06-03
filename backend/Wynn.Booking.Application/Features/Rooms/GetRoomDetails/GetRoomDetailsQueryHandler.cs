@@ -26,17 +26,10 @@ public sealed class GetRoomDetailsQueryHandler(IRoomRepository roomRepository)
             !string.IsNullOrWhiteSpace(request.CheckInDate)
             && !string.IsNullOrWhiteSpace(request.CheckOutDate))
         {
-            var dateValidation = DateHelpers.ValidateStayDateRange(
-                request.CheckInDate,
-                request.CheckOutDate);
-
-            if (dateValidation.IsValid)
-            {
-                var checkIn = DateHelpers.ParseDateOnly(request.CheckInDate)!.Value;
-                var checkOut = DateHelpers.ParseDateOnly(request.CheckOutDate)!.Value;
-                numberOfNights = DateHelpers.CalculateNumberOfNights(checkIn, checkOut);
-                estimatedSubtotal = decimal.Round(room.PricePerNight * numberOfNights.Value, 2);
-            }
+            var checkIn = DateHelpers.ParseDateOnly(request.CheckInDate)!.Value;
+            var checkOut = DateHelpers.ParseDateOnly(request.CheckOutDate)!.Value;
+            numberOfNights = DateHelpers.CalculateNumberOfNights(checkIn, checkOut);
+            estimatedSubtotal = decimal.Round(room.PricePerNight * numberOfNights.Value, 2);
         }
 
         var details = new RoomDetailsDto(

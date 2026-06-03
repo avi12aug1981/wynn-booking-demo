@@ -58,17 +58,6 @@ try
 
     Log.Information("Unified audit log path: {AuditLogPath}", auditLogPath);
 
-    if (app.Environment.IsDevelopment())
-    {
-        using var scope = app.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<BookingDbContext>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        await DatabaseInitializer.InitializeAsync(
-            dbContext,
-            logger,
-            app.Configuration);
-    }
-    else
     {
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<BookingDbContext>();

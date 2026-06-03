@@ -104,7 +104,12 @@ Cancel Reservation
 
 ### Frontend
 
+Requires **Node.js 20.9+** (Next.js 16). If `node -v` shows 18.x, use nvm:
+
 ```bash
+nvm use    # reads .nvmrc → 20
+# or: nvm install 20 && nvm use 20
+
 npm install
 npm run dev
 ```

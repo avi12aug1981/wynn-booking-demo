@@ -27,7 +27,7 @@ Search available rooms.
 
 Room details for checkout UI.
 
-**Query:** optional `checkInDate`, `checkOutDate` for pricing context
+**Query:** optional `checkInDate`, `checkOutDate` for pricing context — if either is sent, **both** are required and must pass the same stay-date rules as search (**400** on past dates, same-day, or check-out ≤ check-in). Omit both for room-only (no `numberOfNights` / `estimatedSubtotal`).
 
 ### GET `/api/rooms/{id}/availability`
 

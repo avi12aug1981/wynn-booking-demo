@@ -24,7 +24,7 @@ Errors use HTTP status codes (400 validation, 401/403 auth, 404 not found, 409 c
 |--------|------|------|---------|
 | POST | `/api/auth/login` | None | Demo member JWT |
 | GET | `/api/rooms` | None | Search with dates + guest count |
-| GET | `/api/rooms/{id}` | None | Room details (+ optional dates for pricing) |
+| GET | `/api/rooms/{id}` | None | Room details; optional dates (both required if used) → **400** if invalid |
 | GET | `/api/rooms/{id}/availability` | None | Boolean availability check |
 | POST | `/api/booking-sessions` | `x-api-key` | Create checkout session |
 | GET | `/api/booking-sessions/{token}` | None* | Load session + room |

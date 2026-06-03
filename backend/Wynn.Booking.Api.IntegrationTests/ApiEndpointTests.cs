@@ -42,6 +42,52 @@ public sealed class ApiEndpointTests(WynnBookingApiFactory factory) : IClassFixt
     }
 
     [Fact]
+    public async Task GetRoomDetails_WithSameCheckInAndCheckOut_ReturnsBadRequest()
+    {
+        var response = await _client.GetAsync(
+            "/api/rooms/1?checkInDate=2026-12-10&checkOutDate=2026-12-10");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var json = await response.Content.ReadFromJsonAsync<ApiEnvelope<object>>();
+        Assert.NotNull(json);
+        Assert.False(json!.Success);
+    }
+
+    [Fact]
+    public async Task GetRoomDetails_WithPastCheckIn_ReturnsBadRequest()
+    {
+        var response = await _client.GetAsync(
+            "/api/rooms/1?checkInDate=2020-01-01&checkOutDate=2020-01-03");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetRoomDetails_WithOnlyOneDate_ReturnsBadRequest()
+    {
+        var response = await _client.GetAsync("/api/rooms/1?checkInDate=2026-12-10");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetRoomDetails_WithValidDates_ReturnsPricingFields()
+    {
+        var response = await _client.GetAsync(
+            "/api/rooms/1?checkInDate=2026-12-10&checkOutDate=2026-12-12");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var json = await response.Content.ReadFromJsonAsync<ApiEnvelope<RoomDetailsData>>();
+        Assert.NotNull(json);
+        Assert.True(json!.Success);
+        Assert.NotNull(json.Data);
+        Assert.Equal(2, json.Data!.NumberOfNights);
+        Assert.NotNull(json.Data.EstimatedSubtotal);
+    }
+
+    [Fact]
     public async Task SearchRooms_ReturnsSuccessEnvelope()
     {
         var response = await _client.GetAsync(
@@ -217,6 +263,12 @@ public sealed class ApiEndpointTests(WynnBookingApiFactory factory) : IClassFixt
     private sealed class RoomSearchData
     {
         public object[]? Rooms { get; init; }
+    }
+
+    private sealed class RoomDetailsData
+    {
+        public int? NumberOfNights { get; init; }
+        public decimal? EstimatedSubtotal { get; init; }
     }
 
     private sealed class LoginData
