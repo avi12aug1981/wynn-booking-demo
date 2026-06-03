@@ -5,7 +5,8 @@
 
 ## Purpose
 
-Wynn Booking Demo is a hotel reservation proof of concept for senior .NET full-stack review: Next.js UI, **ASP.NET Core 9 Web API**, and **Azure SQL** (or SQL Server locally).
+Wynn Booking Demo is a hotel reservation proof of concept:
+Next.js UI, **ASP.NET Core 9 Web API**, and **Azure SQL** (or SQL Server locally).
 
 ## Primary stack (v3 — use this in demos)
 
